@@ -4,13 +4,16 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 
+import { DueDateBadge } from "@/components/due-date-badge";
 import type { TaskStatus } from "@/generated/prisma/enums";
+import { getInitials } from "@/lib/initials";
 import { TASK_STATUS_LABELS } from "@/lib/task";
 
 type BoardTask = {
   id: string;
   title: string;
   status: TaskStatus;
+  // A YYYY-MM-DD calendar date.
   dueDate: string | null;
   assigneeName: string | null;
 };
@@ -24,8 +27,8 @@ const COLUMNS: TaskStatus[] = ["TODO", "IN_PROGRESS", "DONE"];
 
 const COLUMN_DOT_CLASSES: Record<TaskStatus, string> = {
   TODO: "bg-zinc-400",
-  IN_PROGRESS: "bg-blue-500",
-  DONE: "bg-green-500",
+  IN_PROGRESS: "bg-indigo-500",
+  DONE: "bg-emerald-500",
 };
 
 export function KanbanBoard({ projectHref, tasks }: KanbanBoardProps) {
@@ -87,93 +90,124 @@ export function KanbanBoard({ projectHref, tasks }: KanbanBoardProps) {
   }
 
   return (
-    <div className="mt-4 grid gap-4 lg:grid-cols-3">
+    <div className="mt-4 grid gap-4 md:grid-cols-3 md:items-start">
       {COLUMNS.map((column) => {
         const columnTasks = tasks.filter((task) => task.status === column);
+        const headingId = `column-${column}`;
 
         return (
-          <section key={column} className="rounded-xl border border-line bg-zinc-100/70 p-3">
-            <div className="mb-3 flex items-center justify-between px-1">
-              <h3 className="flex items-center gap-2 text-sm font-medium">
+          <section
+            key={column}
+            aria-labelledby={headingId}
+            className="min-w-0 rounded-xl border border-line bg-zinc-100/60 p-2"
+          >
+            <div className="flex items-center justify-between gap-2 px-2 pt-1.5 pb-2.5">
+              <h3
+                id={headingId}
+                className="flex items-center gap-2 text-sm font-semibold text-ink"
+              >
                 <span
-                  className={`h-2 w-2 rounded-full ${COLUMN_DOT_CLASSES[column]}`}
+                  aria-hidden="true"
+                  className={`size-2 rounded-full ${COLUMN_DOT_CLASSES[column]}`}
                 />
                 {TASK_STATUS_LABELS[column]}
               </h3>
 
-              <span className="text-xs text-zinc-500">
+              <span className="rounded-full bg-surface px-2 py-0.5 text-xs font-medium text-zinc-600 ring-1 ring-line">
                 {columnTasks.length}
+                <span className="sr-only">
+                  {columnTasks.length === 1 ? " task" : " tasks"}
+                </span>
               </span>
             </div>
 
             {columnTasks.length === 0 ? (
-              <p className="rounded-lg border border-dashed border-zinc-300 px-3 py-6 text-center text-xs text-zinc-500">
+              <p className="rounded-lg border border-dashed border-zinc-300 px-3 py-3 text-center text-xs text-zinc-500">
                 No tasks
               </p>
             ) : (
-              <ul className="space-y-3">
-                {columnTasks.map((task) => (
-                  <li
-                    key={task.id}
-                    className="tk-card tk-card-interactive p-4"
-                  >
-                    <Link
-                      href={`${projectHref}/tasks/${task.id}`}
-                      className={`block text-sm font-medium hover:underline ${
-                        task.status === "DONE" ? "text-zinc-500" : ""
-                      }`}
+              <ul className="space-y-2">
+                {columnTasks.map((task) => {
+                  const isDone = task.status === "DONE";
+                  const hasError = error?.taskId === task.id;
+
+                  return (
+                    <li
+                      key={task.id}
+                      className="relative rounded-lg border border-line bg-surface p-3 shadow-xs transition hover:border-zinc-300 hover:shadow-sm has-[a:focus-visible]:border-indigo-500 has-[a:focus-visible]:ring-3 has-[a:focus-visible]:ring-indigo-500/20"
                     >
-                      {task.title}
-                    </Link>
-
-                    <div className="mt-2 flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-xs text-zinc-500">
-                      <span
-                        className={task.assigneeName ? "text-zinc-700" : ""}
+                      {/* The link covers the whole card, so the card is one
+                          large target. The status select sits above it. */}
+                      <Link
+                        href={`${projectHref}/tasks/${task.id}`}
+                        className={`block text-sm leading-5 font-medium break-words outline-none after:absolute after:inset-0 after:rounded-lg hover:text-indigo-700 ${
+                          isDone ? "text-zinc-500" : "text-ink"
+                        }`}
                       >
-                        {task.assigneeName ?? "Unassigned"}
-                      </span>
+                        {task.title}
+                      </Link>
 
-                      {task.dueDate && <span>Due {task.dueDate}</span>}
-                    </div>
+                      <div className="mt-2.5 flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5">
+                        <span className="flex min-w-0 items-center gap-1.5 text-xs">
+                          {task.assigneeName ? (
+                            <>
+                              <span
+                                aria-hidden="true"
+                                className="flex size-5 shrink-0 items-center justify-center rounded-full bg-indigo-50 text-[10px] font-semibold text-indigo-700"
+                              >
+                                {getInitials(task.assigneeName)}
+                              </span>
+                              <span className="truncate text-zinc-700">
+                                {task.assigneeName}
+                              </span>
+                            </>
+                          ) : (
+                            <span className="text-zinc-500">Unassigned</span>
+                          )}
+                        </span>
 
-                    <select
-                      aria-label={`Status for ${task.title}`}
-                      value={
-                        updating?.taskId === task.id
-                          ? updating.status
-                          : task.status
-                      }
-                      onChange={(event) =>
-                        handleStatusChange(
-                          task.id,
-                          event.target.value as TaskStatus,
-                        )
-                      }
-                      disabled={isBusy}
-                      aria-describedby={
-                        error?.taskId === task.id
-                          ? `status-error-${task.id}`
-                          : undefined
-                      }
-                      className="tk-input tk-input-sm mt-3"
-                    >
-                      {COLUMNS.map((status) => (
-                        <option key={status} value={status}>
-                          {TASK_STATUS_LABELS[status]}
-                        </option>
-                      ))}
-                    </select>
+                        {task.dueDate && (
+                          <DueDateBadge dueDate={task.dueDate} isDone={isDone} />
+                        )}
+                      </div>
 
-                    {error?.taskId === task.id && (
-                      <p
-                        id={`status-error-${task.id}`}
-                        className="tk-field-error"
+                      <select
+                        aria-label={`Status for ${task.title}`}
+                        value={
+                          updating?.taskId === task.id
+                            ? updating.status
+                            : task.status
+                        }
+                        onChange={(event) =>
+                          handleStatusChange(
+                            task.id,
+                            event.target.value as TaskStatus,
+                          )
+                        }
+                        disabled={isBusy}
+                        aria-describedby={
+                          hasError ? `status-error-${task.id}` : undefined
+                        }
+                        className="tk-input tk-input-sm relative z-10 mt-3 h-10 cursor-pointer bg-zinc-50 text-sm font-medium text-zinc-700 shadow-none hover:bg-white md:h-8 md:text-xs"
                       >
-                        {error.message}
-                      </p>
-                    )}
-                  </li>
-                ))}
+                        {COLUMNS.map((status) => (
+                          <option key={status} value={status}>
+                            {TASK_STATUS_LABELS[status]}
+                          </option>
+                        ))}
+                      </select>
+
+                      {hasError && (
+                        <p
+                          id={`status-error-${task.id}`}
+                          className="tk-field-error relative z-10"
+                        >
+                          {error?.message}
+                        </p>
+                      )}
+                    </li>
+                  );
+                })}
               </ul>
             )}
           </section>

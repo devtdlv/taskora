@@ -1,8 +1,9 @@
 import { notFound, redirect } from "next/navigation";
 
 import { Breadcrumbs } from "@/components/breadcrumbs";
+import { DueDateBadge } from "@/components/due-date-badge";
 import { getCurrentUser } from "@/lib/session";
-import { formatDueDate } from "@/lib/task";
+import { toDateOnly } from "@/lib/task";
 import { getTaskComments } from "@/services/comment.service";
 import { getProjectTask } from "@/services/task.service";
 import { getWorkspaceMembers } from "@/services/workspace.service";
@@ -39,11 +40,8 @@ export default async function TaskPage({
     getTaskComments(task.id),
   ]);
 
-  // Due dates are stored at midnight UTC, so the UTC date part is the saved
-  // calendar date in the YYYY-MM-DD form a date input expects.
-  const dueDateValue = task.dueDate
-    ? task.dueDate.toISOString().slice(0, 10)
-    : null;
+  // YYYY-MM-DD, the form both the date input and the due-date badge expect.
+  const dueDateValue = task.dueDate ? toDateOnly(task.dueDate) : null;
 
   return (
     <>
@@ -56,8 +54,11 @@ export default async function TaskPage({
         ]}
       />
 
-      <div className="mt-4 grid gap-6 md:grid-cols-[1fr_240px] lg:gap-8">
-        <div className="tk-card min-w-0 p-5 sm:p-8">
+      {/* On small screens the properties panel sits between the task and its
+          comments. From md up it moves to a sticky right column that spans
+          both, and the 1fr second row absorbs its extra height. */}
+      <div className="mt-4 grid gap-6 md:grid-cols-[minmax(0,1fr)_260px] md:grid-rows-[auto_1fr] lg:grid-cols-[minmax(0,1fr)_288px] lg:gap-8">
+        <div className="tk-card min-w-0 p-5 sm:p-8 md:col-start-1">
           <TaskDetails
             taskUrl={taskUrl}
             projectHref={projectHref}
@@ -65,7 +66,48 @@ export default async function TaskPage({
             description={task.description}
             dueDate={dueDateValue}
           />
+        </div>
 
+        <aside
+          aria-labelledby="properties-heading"
+          className="tk-card md:sticky md:top-20 md:col-start-2 md:row-span-2 md:row-start-1 md:self-start lg:top-10"
+        >
+          <h2
+            id="properties-heading"
+            className="border-b border-line px-5 py-4 text-sm font-semibold text-ink"
+          >
+            Properties
+          </h2>
+
+          <div className="space-y-5 p-5">
+            <TaskStatusSelect taskUrl={taskUrl} initialStatus={task.status} />
+
+            <TaskAssigneeSelect
+              taskUrl={taskUrl}
+              assigneeId={task.assigneeId}
+              members={members.map((member) => ({
+                id: member.id,
+                label: member.user.name || member.user.email,
+              }))}
+            />
+
+            <div>
+              <p className="tk-label">Due date</p>
+              <div className="mt-2 text-sm text-zinc-600">
+                {dueDateValue ? (
+                  <DueDateBadge
+                    dueDate={dueDateValue}
+                    isDone={task.status === "DONE"}
+                  />
+                ) : (
+                  "No due date"
+                )}
+              </div>
+            </div>
+          </div>
+        </aside>
+
+        <div className="min-w-0 md:col-start-1">
           <TaskComments
             taskUrl={taskUrl}
             comments={comments.map((comment) => ({
@@ -77,26 +119,6 @@ export default async function TaskPage({
             }))}
           />
         </div>
-
-        <aside className="tk-card space-y-6 p-5 md:self-start">
-          <TaskStatusSelect taskUrl={taskUrl} initialStatus={task.status} />
-
-          <TaskAssigneeSelect
-            taskUrl={taskUrl}
-            assigneeId={task.assigneeId}
-            members={members.map((member) => ({
-              id: member.id,
-              label: member.user.name || member.user.email,
-            }))}
-          />
-
-          <div>
-            <p className="tk-label">Due date</p>
-            <p className="mt-2 text-sm text-zinc-600">
-              {task.dueDate ? formatDueDate(task.dueDate) : "No due date"}
-            </p>
-          </div>
-        </aside>
       </div>
     </>
   );

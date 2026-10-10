@@ -3,6 +3,8 @@
 import { useRouter } from "next/navigation";
 import { FormEvent, useState, useTransition } from "react";
 
+import { getInitials } from "@/lib/initials";
+
 type Comment = {
   id: string;
   body: string;
@@ -120,66 +122,84 @@ export function TaskComments({ taskUrl, comments }: TaskCommentsProps) {
   }
 
   return (
-    <section className="mt-10 border-t border-zinc-200 pt-8">
-      <h2 className="tk-section-title">Comments</h2>
+    <section aria-labelledby="comments-heading" className="tk-card p-5 sm:p-8">
+      <div className="flex items-center gap-2">
+        <h2 id="comments-heading" className="tk-section-title">
+          Comments
+        </h2>
+        {comments.length > 0 && (
+          <span className="tk-badge">{comments.length}</span>
+        )}
+      </div>
 
       {comments.length === 0 ? (
-        <p className="mt-4 text-sm text-zinc-500">No comments yet.</p>
+        <p className="mt-3 text-sm text-zinc-500">
+          No comments yet. Start the conversation below.
+        </p>
       ) : (
-        <ul className="mt-4 space-y-4">
+        <ul className="mt-4 divide-y divide-zinc-100">
           {comments.map((comment) => (
-            <li
-              key={comment.id}
-              className="tk-card px-4 py-3"
-            >
-              <div className="flex flex-wrap items-baseline justify-between gap-2">
-                <p className="text-sm">
-                  <span className="font-medium text-zinc-900">
-                    {comment.authorName}
-                  </span>{" "}
-                  {/* Formatted in the viewer's own time zone, which can differ
-                      from the server's during the first render. */}
-                  <time
-                    dateTime={comment.createdAt}
-                    suppressHydrationWarning
-                    className="text-zinc-500"
-                  >
-                    {new Date(comment.createdAt).toLocaleString(undefined, {
-                      dateStyle: "medium",
-                      timeStyle: "short",
-                    })}
-                  </time>
+            <li key={comment.id} className="flex gap-3 py-4 first:pt-2">
+              <span
+                aria-hidden="true"
+                className="flex size-8 shrink-0 items-center justify-center rounded-full bg-zinc-100 text-xs font-semibold text-zinc-700"
+              >
+                {getInitials(comment.authorName)}
+              </span>
+
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+                  <p className="min-w-0 text-sm">
+                    <span className="font-medium text-ink">
+                      {comment.authorName}
+                    </span>{" "}
+                    {/* Formatted in the viewer's own time zone, which can
+                        differ from the server's during the first render. */}
+                    <time
+                      dateTime={comment.createdAt}
+                      suppressHydrationWarning
+                      className="text-xs text-zinc-500"
+                    >
+                      {new Date(comment.createdAt).toLocaleString(undefined, {
+                        dateStyle: "medium",
+                        timeStyle: "short",
+                      })}
+                    </time>
+                  </p>
+
+                  {comment.isOwn && (
+                    <button
+                      type="button"
+                      onClick={() => handleDelete(comment.id)}
+                      disabled={deletingId !== null}
+                      className="-mx-2 inline-flex h-8 items-center rounded-md px-2 text-xs font-medium text-zinc-500 transition-colors hover:bg-red-50 hover:text-red-700 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      {deletingId === comment.id ? "Deleting..." : "Delete"}
+                    </button>
+                  )}
+                </div>
+
+                <p className="mt-1 text-sm leading-6 break-words whitespace-pre-wrap text-zinc-700">
+                  {comment.body}
                 </p>
 
-                {comment.isOwn && (
-                  <button
-                    type="button"
-                    onClick={() => handleDelete(comment.id)}
-                    disabled={deletingId !== null}
-                    className="rounded-sm text-xs font-medium text-red-700 hover:underline disabled:cursor-not-allowed disabled:opacity-60"
-                  >
-                    {deletingId === comment.id ? "Deleting..." : "Delete"}
-                  </button>
+                {deleteError?.commentId === comment.id && (
+                  <p role="alert" className="mt-2 text-xs text-red-600">
+                    {deleteError.message}
+                  </p>
                 )}
               </div>
-
-              <p className="mt-2 whitespace-pre-wrap break-words text-sm leading-6 text-zinc-700">
-                {comment.body}
-              </p>
-
-              {deleteError?.commentId === comment.id && (
-                <p role="alert" className="mt-2 text-xs text-red-600">
-                  {deleteError.message}
-                </p>
-              )}
             </li>
           ))}
         </ul>
       )}
 
-      <form className="mt-6 space-y-3" onSubmit={handleSubmit}>
-        <label htmlFor="comment" className="sr-only">
-          Comment
+      <form
+        className="mt-4 border-t border-line pt-5"
+        onSubmit={handleSubmit}
+      >
+        <label htmlFor="comment" className="tk-label">
+          Add a comment
         </label>
 
         <textarea
@@ -192,7 +212,7 @@ export function TaskComments({ taskUrl, comments }: TaskCommentsProps) {
           placeholder="Write a comment"
           aria-invalid={Boolean(formError)}
           aria-describedby={formError ? "comment-error" : undefined}
-          className="tk-input tk-textarea"
+          className="tk-input tk-textarea mt-2"
         />
 
         {formError && (
@@ -201,13 +221,15 @@ export function TaskComments({ taskUrl, comments }: TaskCommentsProps) {
           </p>
         )}
 
-        <button
-          type="submit"
-          disabled={isPostBusy || body.trim() === ""}
-          className="tk-btn tk-btn-primary"
-        >
-          {isPostBusy ? "Posting..." : "Post comment"}
-        </button>
+        <div className="mt-3 flex justify-end">
+          <button
+            type="submit"
+            disabled={isPostBusy || body.trim() === ""}
+            className="tk-btn tk-btn-primary w-full sm:w-auto"
+          >
+            {isPostBusy ? "Posting..." : "Post comment"}
+          </button>
+        </div>
       </form>
     </section>
   );

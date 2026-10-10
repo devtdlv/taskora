@@ -46,6 +46,9 @@ export function TaskStatusSelect({
       }
 
       setStatus(data.task.status);
+      // The due-date badge beside this select is server-rendered and depends
+      // on whether the task is done.
+      router.refresh();
     } catch {
       setError("Something went wrong while updating the status.");
     } finally {

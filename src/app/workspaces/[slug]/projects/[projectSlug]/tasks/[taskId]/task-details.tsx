@@ -232,9 +232,9 @@ export function TaskDetails({
   return (
     <div>
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <h1 className="tk-page-title">{title}</h1>
+        <h1 className="tk-page-title min-w-0 break-words">{title}</h1>
 
-        <div className="flex shrink-0 gap-2">
+        <div className="flex shrink-0 items-center gap-1">
           <button
             type="button"
             onClick={startEditing}
@@ -248,7 +248,7 @@ export function TaskDetails({
             type="button"
             onClick={handleDelete}
             disabled={isDeleting}
-            className="tk-btn tk-btn-danger tk-btn-sm"
+            className="tk-btn tk-btn-sm text-red-700 hover:bg-red-50"
           >
             {isDeleting ? "Deleting..." : "Delete task"}
           </button>
@@ -261,13 +261,24 @@ export function TaskDetails({
         </div>
       )}
 
-      {description ? (
-        <p className="mt-4 whitespace-pre-line text-sm leading-6 text-zinc-700">
-          {description}
-        </p>
-      ) : (
-        <p className="mt-4 text-sm text-zinc-500">No description.</p>
-      )}
+      <section aria-labelledby="description-heading" className="mt-6">
+        <h2
+          id="description-heading"
+          className="text-xs font-medium tracking-wide text-zinc-500 uppercase"
+        >
+          Description
+        </h2>
+
+        {description ? (
+          <p className="mt-2 text-sm leading-7 break-words whitespace-pre-line text-zinc-700">
+            {description}
+          </p>
+        ) : (
+          <p className="mt-2 text-sm text-zinc-500">
+            No description yet. Use Edit task to add one.
+          </p>
+        )}
+      </section>
     </div>
   );
 }

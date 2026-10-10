@@ -3,7 +3,7 @@ import { notFound, redirect } from "next/navigation";
 
 import { Breadcrumbs } from "@/components/breadcrumbs";
 import { getCurrentUser } from "@/lib/session";
-import { formatDueDate } from "@/lib/task";
+import { toDateOnly } from "@/lib/task";
 import { getWorkspaceProject } from "@/services/project.service";
 import { getProjectTasks } from "@/services/task.service";
 
@@ -93,7 +93,7 @@ export default async function ProjectPage({
               id: task.id,
               title: task.title,
               status: task.status,
-              dueDate: task.dueDate ? formatDueDate(task.dueDate) : null,
+              dueDate: task.dueDate ? toDateOnly(task.dueDate) : null,
               assigneeName: task.assignee
                 ? task.assignee.user.name || task.assignee.user.email
                 : null,
