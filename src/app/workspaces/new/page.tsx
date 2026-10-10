@@ -1,7 +1,6 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 
-import { SiteHeader } from "@/components/site-header";
+import { Breadcrumbs } from "@/components/breadcrumbs";
 import { getCurrentUser } from "@/lib/session";
 
 import { CreateWorkspaceForm } from "./create-workspace-form";
@@ -14,30 +13,23 @@ export default async function NewWorkspacePage() {
   }
 
   return (
-    <div className="min-h-screen bg-white text-ink">
-      <SiteHeader />
+    <div className="max-w-2xl">
+      <Breadcrumbs
+        items={[{ label: "Dashboard", href: "/dashboard" }, { label: "New workspace" }]}
+      />
 
-      <main className="mx-auto max-w-lg px-6 py-16">
-        <Link
-          href="/dashboard"
-          className="text-sm text-zinc-600 hover:text-zinc-950"
-        >
-          &larr; Back to dashboard
-        </Link>
+      <div className="tk-card mt-4 p-5 sm:p-8">
+        <h1 className="tk-page-title">Create a workspace</h1>
 
-        <h1 className="tk-page-title mt-6">
-          Create a workspace
-        </h1>
-
-        <p className="mt-3 text-sm leading-6 text-zinc-600">
+        <p className="tk-page-description">
           A workspace is where your team&apos;s projects and tasks live.
           You&apos;ll be its owner.
         </p>
 
-        <div className="mt-9">
+        <div className="mt-8">
           <CreateWorkspaceForm />
         </div>
-      </main>
+      </div>
     </div>
   );
 }

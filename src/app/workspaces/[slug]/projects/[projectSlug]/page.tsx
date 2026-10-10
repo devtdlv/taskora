@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
-import { SiteHeader } from "@/components/site-header";
+import { Breadcrumbs } from "@/components/breadcrumbs";
 import { getCurrentUser } from "@/lib/session";
 import { formatDueDate } from "@/lib/task";
 import { getWorkspaceProject } from "@/services/project.service";
@@ -32,84 +32,75 @@ export default async function ProjectPage({
   const projectHref = `/workspaces/${workspace.slug}/projects/${project.slug}`;
 
   return (
-    <div className="min-h-screen bg-white text-ink">
-      <SiteHeader />
+    <>
+      <Breadcrumbs
+        items={[
+          { label: "Dashboard", href: "/dashboard" },
+          { label: workspace.name, href: `/workspaces/${workspace.slug}` },
+          { label: project.name },
+        ]}
+      />
 
-      <main className="mx-auto max-w-6xl px-6 py-12">
-        <nav
-          aria-label="Breadcrumb"
-          className="flex flex-wrap items-center gap-2 text-sm text-zinc-600"
-        >
-          <Link href="/dashboard" className="hover:text-zinc-950">
-            Workspaces
-          </Link>
-          <span aria-hidden="true">/</span>
-          <Link
-            href={`/workspaces/${workspace.slug}`}
-            className="hover:text-zinc-950"
-          >
-            {workspace.name}
-          </Link>
-          <span aria-hidden="true">/</span>
-          <span aria-current="page" className="text-zinc-950">
-            {project.name}
-          </span>
-        </nav>
+      <div className="tk-page-header mt-4">
+        <div className="min-w-0">
+          <h1 className="tk-page-title break-words">{project.name}</h1>
 
-        <h1 className="tk-page-title mt-6">{project.name}</h1>
-
-        {project.description && (
-          <p className="mt-3 max-w-2xl whitespace-pre-line text-sm leading-6 text-zinc-600">
-            {project.description}
-          </p>
-        )}
-
-        <section className="mt-10">
-          <div className="flex items-center justify-between gap-4">
-            <h2 className="tk-section-title">Tasks</h2>
-
-            {tasks.length > 0 && (
-              <Link
-                href={`${projectHref}/tasks/new`}
-                className="tk-btn tk-btn-primary"
-              >
-                Create task
-              </Link>
-            )}
-          </div>
-
-          {tasks.length === 0 ? (
-            <div className="mt-4 rounded-lg border border-dashed border-zinc-300 px-6 py-16 text-center">
-              <h3 className="font-semibold">No tasks yet</h3>
-
-              <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-zinc-600">
-                Break this project into tasks so everyone knows what needs to
-                happen next.
-              </p>
-
-              <Link
-                href={`${projectHref}/tasks/new`}
-                className="tk-btn tk-btn-primary mt-6"
-              >
-                Create task
-              </Link>
-            </div>
-          ) : (
-            <KanbanBoard
-              projectHref={projectHref}
-              tasks={tasks.map((task) => ({
-                id: task.id,
-                title: task.title,
-                status: task.status,
-                dueDate: task.dueDate ? formatDueDate(task.dueDate) : null,
-                assigneeName: task.assignee
-                  ? task.assignee.user.name || task.assignee.user.email
-                  : null,
-              }))}
-            />
+          {project.description && (
+            <p className="tk-page-description whitespace-pre-line">
+              {project.description}
+            </p>
           )}
-        </section>
-      </main>
-    </div>
+        </div>
+
+        {tasks.length > 0 && (
+          <Link
+            href={`${projectHref}/tasks/new`}
+            className="tk-btn tk-btn-primary w-full sm:w-auto"
+          >
+            Create task
+          </Link>
+        )}
+      </div>
+
+      <section aria-labelledby="tasks-heading" className="mt-10">
+        <div className="flex items-center gap-2">
+          <h2 id="tasks-heading" className="tk-section-title">
+            Tasks
+          </h2>
+          {tasks.length > 0 && <span className="tk-badge">{tasks.length}</span>}
+        </div>
+
+        {tasks.length === 0 ? (
+          <div className="tk-empty mt-4">
+            <h3 className="tk-section-title">No tasks yet</h3>
+
+            <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-zinc-600">
+              Break this project into tasks so everyone knows what needs to
+              happen next.
+            </p>
+
+            <Link
+              href={`${projectHref}/tasks/new`}
+              className="tk-btn tk-btn-primary mt-6"
+            >
+              Create task
+            </Link>
+          </div>
+        ) : (
+          <KanbanBoard
+            projectHref={projectHref}
+            tasks={tasks.map((task) => ({
+              id: task.id,
+              title: task.title,
+              status: task.status,
+              dueDate: task.dueDate ? formatDueDate(task.dueDate) : null,
+              assigneeName: task.assignee
+                ? task.assignee.user.name || task.assignee.user.email
+                : null,
+            }))}
+          />
+        )}
+      </section>
+    </>
   );
 }

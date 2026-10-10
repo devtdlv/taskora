@@ -1,7 +1,6 @@
-import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
-import { SiteHeader } from "@/components/site-header";
+import { Breadcrumbs } from "@/components/breadcrumbs";
 import { getCurrentUser } from "@/lib/session";
 import { formatDueDate } from "@/lib/task";
 import { getTaskComments } from "@/services/comment.service";
@@ -47,73 +46,58 @@ export default async function TaskPage({
     : null;
 
   return (
-    <div className="min-h-screen bg-white text-ink">
-      <SiteHeader />
+    <>
+      <Breadcrumbs
+        items={[
+          { label: "Dashboard", href: "/dashboard" },
+          { label: workspace.name, href: `/workspaces/${workspace.slug}` },
+          { label: project.name, href: projectHref },
+          { label: task.title },
+        ]}
+      />
 
-      <main className="mx-auto max-w-6xl px-6 py-12">
-        <nav
-          aria-label="Breadcrumb"
-          className="flex flex-wrap items-center gap-2 text-sm text-zinc-600"
-        >
-          <Link href="/dashboard" className="hover:text-zinc-950">
-            Workspaces
-          </Link>
-          <span aria-hidden="true">/</span>
-          <Link
-            href={`/workspaces/${workspace.slug}`}
-            className="hover:text-zinc-950"
-          >
-            {workspace.name}
-          </Link>
-          <span aria-hidden="true">/</span>
-          <Link href={projectHref} className="hover:text-zinc-950">
-            {project.name}
-          </Link>
-        </nav>
+      <div className="mt-4 grid gap-6 md:grid-cols-[1fr_240px] lg:gap-8">
+        <div className="tk-card min-w-0 p-5 sm:p-8">
+          <TaskDetails
+            taskUrl={taskUrl}
+            projectHref={projectHref}
+            title={task.title}
+            description={task.description}
+            dueDate={dueDateValue}
+          />
 
-        <div className="mt-6 grid gap-10 md:grid-cols-[1fr_240px]">
-          <div>
-            <TaskDetails
-              taskUrl={taskUrl}
-              projectHref={projectHref}
-              title={task.title}
-              description={task.description}
-              dueDate={dueDateValue}
-            />
-
-            <TaskComments
-              taskUrl={taskUrl}
-              comments={comments.map((comment) => ({
-                id: comment.id,
-                body: comment.body,
-                authorName: comment.author.name || comment.author.email,
-                createdAt: comment.createdAt.toISOString(),
-                isOwn: comment.authorId === user.id,
-              }))}
-            />
-          </div>
-
-          <aside className="tk-card space-y-6 p-5">
-            <TaskStatusSelect taskUrl={taskUrl} initialStatus={task.status} />
-
-            <TaskAssigneeSelect
-              taskUrl={taskUrl}
-              assigneeId={task.assigneeId}
-              members={members.map((member) => ({
-                id: member.id,
-                label: member.user.name || member.user.email,
-              }))}
-            />
-
-            <div>
-              <p className="tk-label">Due date</p>
-              <p className="mt-2 text-sm text-zinc-600">
-                {task.dueDate ? formatDueDate(task.dueDate) : "No due date"}
-              </p>
-            </div>
-          </aside>
+          <TaskComments
+            taskUrl={taskUrl}
+            comments={comments.map((comment) => ({
+              id: comment.id,
+              body: comment.body,
+              authorName: comment.author.name || comment.author.email,
+              createdAt: comment.createdAt.toISOString(),
+              isOwn: comment.authorId === user.id,
+            }))}
+          />
         </div>
-      </main>
-    </div>
+
+        <aside className="tk-card space-y-6 p-5 md:self-start">
+          <TaskStatusSelect taskUrl={taskUrl} initialStatus={task.status} />
+
+          <TaskAssigneeSelect
+            taskUrl={taskUrl}
+            assigneeId={task.assigneeId}
+            members={members.map((member) => ({
+              id: member.id,
+              label: member.user.name || member.user.email,
+            }))}
+          />
+
+          <div>
+            <p className="tk-label">Due date</p>
+            <p className="mt-2 text-sm text-zinc-600">
+              {task.dueDate ? formatDueDate(task.dueDate) : "No due date"}
+            </p>
+          </div>
+        </aside>
+      </div>
+    </>
   );
 }

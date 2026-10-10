@@ -1,7 +1,7 @@
-import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
-import { SiteHeader } from "@/components/site-header";
+import { Breadcrumbs } from "@/components/breadcrumbs";
+import { getInitials } from "@/lib/initials";
 import { getCurrentUser } from "@/lib/session";
 import {
   getWorkspaceMembers,
@@ -32,79 +32,81 @@ export default async function WorkspaceMembersPage({
   const members = await getWorkspaceMembers(workspace.id);
 
   return (
-    <div className="min-h-screen bg-white text-ink">
-      <SiteHeader />
+    <>
+      <Breadcrumbs
+        items={[
+          { label: "Dashboard", href: "/dashboard" },
+          { label: workspace.name, href: `/workspaces/${workspace.slug}` },
+          { label: "Members" },
+        ]}
+      />
 
-      <div className="mx-auto grid max-w-6xl gap-10 px-6 py-12 md:grid-cols-[200px_1fr]">
-        <aside>
-          <Link
-            href="/dashboard"
-            className="text-sm text-zinc-600 hover:text-zinc-950"
-          >
-            &larr; All workspaces
-          </Link>
+      <div className="mt-4">
+        <h1 className="tk-page-title">Members</h1>
+        <p className="tk-page-description">
+          People who have access to {workspace.name}.
+        </p>
+      </div>
 
-          <nav aria-label="Workspace" className="mt-8 space-y-1 text-sm">
-            <Link
-              href={`/workspaces/${workspace.slug}`}
-              className="block rounded-md px-3 py-2 text-zinc-600 hover:bg-zinc-50 hover:text-zinc-950"
-            >
-              Projects
-            </Link>
+      {role === "OWNER" && (
+        <section aria-labelledby="invite-heading" className="tk-card mt-8 p-5 sm:p-6">
+          <h2 id="invite-heading" className="tk-section-title">
+            Invite member
+          </h2>
 
-            <span
-              aria-current="page"
-              className="block rounded-md bg-zinc-100 px-3 py-2 font-medium"
-            >
-              Members
-            </span>
-          </nav>
-        </aside>
-
-        <main>
-          <h1 className="tk-page-title">Members</h1>
-
-          <p className="mt-2 text-sm text-zinc-500">
-            People who have access to {workspace.name}.
+          <p className="mt-1 text-sm text-zinc-600">
+            Create an invitation link for someone to join as a member.
           </p>
 
-          {role === "OWNER" && (
-            <section className="tk-card mt-10 p-5">
-              <h2 className="tk-section-title">Invite member</h2>
+          <div className="mt-5">
+            <InviteMemberForm workspaceSlug={workspace.slug} />
+          </div>
+        </section>
+      )}
 
-              <p className="mt-1 text-sm text-zinc-600">
-                Create an invitation link for someone to join as a member.
-              </p>
+      <section aria-labelledby="members-heading" className="mt-10">
+        <div className="flex items-center gap-2">
+          <h2 id="members-heading" className="tk-section-title">
+            People
+          </h2>
+          <span className="tk-badge">{members.length}</span>
+        </div>
 
-              <div className="mt-5">
-                <InviteMemberForm workspaceSlug={workspace.slug} />
-              </div>
-            </section>
-          )}
+        <ul className="tk-card mt-4 divide-y divide-zinc-200 overflow-hidden">
+          {members.map((member) => (
+            <li
+              key={member.id}
+              className="flex items-center justify-between gap-4 px-4 py-4 sm:px-5"
+            >
+              <div className="flex min-w-0 items-center gap-3">
+                <span
+                  aria-hidden="true"
+                  className="flex size-9 shrink-0 items-center justify-center rounded-full bg-zinc-100 text-xs font-semibold text-zinc-700"
+                >
+                  {getInitials(member.user.name)}
+                </span>
 
-          <ul className="tk-card mt-10 divide-y divide-zinc-200 overflow-hidden">
-            {members.map((member) => (
-              <li
-                key={member.id}
-                className="flex items-center justify-between gap-4 px-5 py-4"
-              >
                 <div className="min-w-0">
-                  <p className="truncate text-sm font-medium">
+                  <p className="truncate text-sm font-medium text-ink">
                     {member.user.name}
                   </p>
                   <p className="truncate text-sm text-zinc-500">
                     {member.user.email}
                   </p>
                 </div>
+              </div>
 
-                <span className="tk-badge shrink-0">
-                  {member.role === "OWNER" ? "Owner" : "Member"}
-                </span>
-              </li>
-            ))}
-          </ul>
-        </main>
-      </div>
-    </div>
+              <span
+                className={`tk-badge shrink-0 ${
+                  member.role === "OWNER" ? "tk-badge-accent" : ""
+                }`}
+              >
+                {member.role === "OWNER" ? "Owner" : "Member"}
+              </span>
+            </li>
+          ))}
+        </ul>
+      </section>
+    </>
   );
 }

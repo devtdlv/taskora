@@ -1,3 +1,5 @@
+import { cache } from "react";
+
 import { Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
 import { pickAvailableSlug, slugify } from "@/lib/slug";
@@ -89,6 +91,12 @@ export async function getUserWorkspaces(userId: string) {
           id: true,
           name: true,
           slug: true,
+          _count: {
+            select: {
+              projects: true,
+              members: true,
+            },
+          },
         },
       },
     },
@@ -117,24 +125,27 @@ export async function getWorkspaceMembers(workspaceId: string) {
 }
 
 // Returns null both when the workspace doesn't exist and when the user isn't
-// a member, so callers can't reveal which workspaces exist.
-export async function getWorkspaceMembership(userId: string, slug: string) {
-  return prisma.workspaceMember.findFirst({
-    where: {
-      userId,
-      workspace: {
-        slug,
-      },
-    },
-    select: {
-      role: true,
-      workspace: {
-        select: {
-          id: true,
-          name: true,
-          slug: true,
+// a member, so callers can't reveal which workspaces exist. Cached per request
+// because the workspace layout and its pages both check membership.
+export const getWorkspaceMembership = cache(
+  async (userId: string, slug: string) => {
+    return prisma.workspaceMember.findFirst({
+      where: {
+        userId,
+        workspace: {
+          slug,
         },
       },
-    },
-  });
-}
+      select: {
+        role: true,
+        workspace: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+          },
+        },
+      },
+    });
+  },
+);

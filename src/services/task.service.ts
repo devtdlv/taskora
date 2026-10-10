@@ -49,6 +49,41 @@ export async function getProjectTasks(projectId: string) {
   });
 }
 
+// Both counts only reach tasks through the user's own memberships, so tasks in
+// other workspaces are never included.
+export async function getOpenTaskCounts(userId: string) {
+  const openTasks: Prisma.TaskWhereInput = {
+    status: {
+      not: "DONE",
+    },
+    project: {
+      workspace: {
+        members: {
+          some: {
+            userId,
+          },
+        },
+      },
+    },
+  };
+
+  const [open, assignedToUser] = await Promise.all([
+    prisma.task.count({
+      where: openTasks,
+    }),
+    prisma.task.count({
+      where: {
+        ...openTasks,
+        assignee: {
+          userId,
+        },
+      },
+    }),
+  ]);
+
+  return { open, assignedToUser };
+}
+
 // Like getWorkspaceProject, the task is only matched through its project,
 // workspace, and the user's membership, so a known task ID alone is never
 // enough to read it. Missing and inaccessible tasks both return null.

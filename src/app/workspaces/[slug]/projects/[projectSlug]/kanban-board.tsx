@@ -92,7 +92,7 @@ export function KanbanBoard({ projectHref, tasks }: KanbanBoardProps) {
         const columnTasks = tasks.filter((task) => task.status === column);
 
         return (
-          <section key={column} className="rounded-xl bg-zinc-50 p-3">
+          <section key={column} className="rounded-xl border border-line bg-zinc-100/70 p-3">
             <div className="mb-3 flex items-center justify-between px-1">
               <h3 className="flex items-center gap-2 text-sm font-medium">
                 <span

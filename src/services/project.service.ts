@@ -78,6 +78,11 @@ export async function getWorkspaceProjects(workspaceId: string) {
       name: true,
       slug: true,
       description: true,
+      _count: {
+        select: {
+          tasks: true,
+        },
+      },
     },
   });
 }

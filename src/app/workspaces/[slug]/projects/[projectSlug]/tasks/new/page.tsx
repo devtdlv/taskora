@@ -1,7 +1,6 @@
-import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
-import { SiteHeader } from "@/components/site-header";
+import { Breadcrumbs } from "@/components/breadcrumbs";
 import { getCurrentUser } from "@/lib/session";
 import { getWorkspaceProject } from "@/services/project.service";
 
@@ -25,34 +24,37 @@ export default async function NewTaskPage({
     notFound();
   }
 
+  const workspaceHref = `/workspaces/${project.workspace.slug}`;
+
   return (
-    <div className="min-h-screen bg-white text-ink">
-      <SiteHeader />
+    <div className="max-w-2xl">
+      <Breadcrumbs
+        items={[
+          { label: "Dashboard", href: "/dashboard" },
+          { label: project.workspace.name, href: workspaceHref },
+          {
+            label: project.name,
+            href: `${workspaceHref}/projects/${project.slug}`,
+          },
+          { label: "New task" },
+        ]}
+      />
 
-      <main className="mx-auto max-w-lg px-6 py-16">
-        <Link
-          href={`/workspaces/${project.workspace.slug}/projects/${project.slug}`}
-          className="text-sm text-zinc-600 hover:text-zinc-950"
-        >
-          &larr; Back to {project.name}
-        </Link>
+      <div className="tk-card mt-4 p-5 sm:p-8">
+        <h1 className="tk-page-title">Create a task</h1>
 
-        <h1 className="tk-page-title mt-6">
-          Create a task
-        </h1>
-
-        <p className="mt-3 text-sm leading-6 text-zinc-600">
+        <p className="tk-page-description">
           New tasks start in To do. You can change the status from the task
           page.
         </p>
 
-        <div className="mt-9">
+        <div className="mt-8">
           <CreateTaskForm
             workspaceSlug={project.workspace.slug}
             projectSlug={project.slug}
           />
         </div>
-      </main>
+      </div>
     </div>
   );
 }

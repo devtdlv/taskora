@@ -44,6 +44,34 @@
     @apply text-base font-semibold text-ink;
   }
 
+  .tk-page-header {
+    @apply flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between;
+  }
+
+  .tk-page-description {
+    @apply mt-2 max-w-2xl text-sm leading-6 text-ink-secondary;
+  }
+
+  .tk-nav-link {
+    @apply flex h-10 items-center rounded-md px-3 text-sm font-medium text-zinc-600 transition-colors hover:bg-zinc-100 hover:text-ink lg:h-9;
+
+    &[aria-current] {
+      @apply bg-zinc-100 text-ink;
+    }
+  }
+
+  .tk-empty {
+    @apply rounded-lg border border-dashed border-zinc-300 bg-surface px-6 py-14 text-center;
+  }
+
+  .tk-avatar {
+    @apply inline-flex shrink-0 items-center justify-center rounded-md bg-zinc-900 font-semibold text-white;
+  }
+
+  .tk-skeleton {
+    @apply animate-pulse rounded-md bg-zinc-200/70 motion-reduce:animate-none;
+  }
+
   .tk-btn {
     @apply inline-flex h-9 items-center justify-center gap-2 rounded-md px-4 text-sm font-medium whitespace-nowrap transition-colors disabled:cursor-not-allowed disabled:opacity-60;
   }
@@ -114,5 +142,9 @@
 
   .tk-badge {
     @apply inline-flex items-center rounded-full bg-zinc-100 px-2 py-0.5 text-xs font-medium text-zinc-700;
+  }
+
+  .tk-badge-accent {
+    @apply bg-indigo-50 text-indigo-700;
   }
 }

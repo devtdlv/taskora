@@ -1,7 +1,6 @@
-import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
-import { SiteHeader } from "@/components/site-header";
+import { Breadcrumbs } from "@/components/breadcrumbs";
 import { getCurrentUser } from "@/lib/session";
 import { getWorkspaceMembership } from "@/services/workspace.service";
 
@@ -28,30 +27,27 @@ export default async function NewProjectPage({
   const { workspace } = membership;
 
   return (
-    <div className="min-h-screen bg-white text-ink">
-      <SiteHeader />
+    <div className="max-w-2xl">
+      <Breadcrumbs
+        items={[
+          { label: "Dashboard", href: "/dashboard" },
+          { label: workspace.name, href: `/workspaces/${workspace.slug}` },
+          { label: "New project" },
+        ]}
+      />
 
-      <main className="mx-auto max-w-lg px-6 py-16">
-        <Link
-          href={`/workspaces/${workspace.slug}`}
-          className="text-sm text-zinc-600 hover:text-zinc-950"
-        >
-          &larr; Back to {workspace.name}
-        </Link>
+      <div className="tk-card mt-4 p-5 sm:p-8">
+        <h1 className="tk-page-title">Create a project</h1>
 
-        <h1 className="tk-page-title mt-6">
-          Create a project
-        </h1>
-
-        <p className="mt-3 text-sm leading-6 text-zinc-600">
+        <p className="tk-page-description">
           Projects group related work in {workspace.name}. Everyone in the
           workspace will be able to see it.
         </p>
 
-        <div className="mt-9">
+        <div className="mt-8">
           <CreateProjectForm workspaceSlug={workspace.slug} />
         </div>
-      </main>
+      </div>
     </div>
   );
 }

@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
-import { SiteHeader } from "@/components/site-header";
+import { Breadcrumbs } from "@/components/breadcrumbs";
+import { getInitials } from "@/lib/initials";
 import { getCurrentUser } from "@/lib/session";
 import { getWorkspaceProjects } from "@/services/project.service";
 import { getWorkspaceMembership } from "@/services/workspace.service";
@@ -29,95 +30,88 @@ export default async function WorkspacePage({
   const newProjectHref = `/workspaces/${workspace.slug}/projects/new`;
 
   return (
-    <div className="min-h-screen bg-white text-ink">
-      <SiteHeader />
+    <>
+      <Breadcrumbs
+        items={[{ label: "Dashboard", href: "/dashboard" }, { label: workspace.name }]}
+      />
 
-      <div className="mx-auto grid max-w-6xl gap-10 px-6 py-12 md:grid-cols-[200px_1fr]">
-        <aside>
-          <Link
-            href="/dashboard"
-            className="text-sm text-zinc-600 hover:text-zinc-950"
-          >
-            &larr; All workspaces
-          </Link>
+      <div className="tk-page-header mt-4">
+        <div className="flex min-w-0 items-center gap-4">
+          <span aria-hidden="true" className="tk-avatar size-12 text-base">
+            {getInitials(workspace.name)}
+          </span>
 
-          <nav aria-label="Workspace" className="mt-8 space-y-1 text-sm">
-            <span
-              aria-current="page"
-              className="block rounded-md bg-zinc-100 px-3 py-2 font-medium"
-            >
-              Projects
-            </span>
-
-            <Link
-              href={`/workspaces/${workspace.slug}/members`}
-              className="block rounded-md px-3 py-2 text-zinc-600 hover:bg-zinc-50 hover:text-zinc-950"
-            >
-              Members
-            </Link>
-          </nav>
-        </aside>
-
-        <main>
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <h1 className="tk-page-title">{workspace.name}</h1>
-
-              <p className="mt-2 text-sm text-zinc-500">/{workspace.slug}</p>
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+              <h1 className="tk-page-title truncate">{workspace.name}</h1>
+              <span
+                className={`tk-badge ${role === "OWNER" ? "tk-badge-accent" : ""}`}
+              >
+                {role === "OWNER" ? "Owner" : "Member"}
+              </span>
             </div>
-
-            <span className="tk-badge shrink-0">
-              {role === "OWNER" ? "Owner" : "Member"}
-            </span>
+            <p className="mt-1 truncate text-sm text-zinc-500">/{workspace.slug}</p>
           </div>
+        </div>
 
-          <section className="mt-10">
-            <div className="flex items-center justify-between gap-4">
-              <h2 className="tk-section-title">Projects</h2>
-
-              {projects.length > 0 && (
-                <Link href={newProjectHref} className="tk-btn tk-btn-primary">
-                  Create project
-                </Link>
-              )}
-            </div>
-
-            {projects.length === 0 ? (
-              <div className="mt-4 rounded-lg border border-dashed border-zinc-300 px-6 py-16 text-center">
-                <h3 className="font-semibold">No projects yet</h3>
-
-                <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-zinc-600">
-                  Projects group related work in this workspace. Create the
-                  first one to get started.
-                </p>
-
-                <Link href={newProjectHref} className="tk-btn tk-btn-primary mt-6">
-                  Create project
-                </Link>
-              </div>
-            ) : (
-              <ul className="mt-4 grid gap-4 sm:grid-cols-2">
-                {projects.map((project) => (
-                  <li key={project.id}>
-                    <Link
-                      href={`/workspaces/${workspace.slug}/projects/${project.slug}`}
-                      className="tk-card tk-card-interactive block h-full p-5"
-                    >
-                      <p className="font-semibold">{project.name}</p>
-
-                      {project.description && (
-                        <p className="mt-2 line-clamp-2 text-sm leading-6 text-zinc-600">
-                          {project.description}
-                        </p>
-                      )}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </section>
-        </main>
+        {projects.length > 0 && (
+          <Link
+            href={newProjectHref}
+            className="tk-btn tk-btn-primary w-full sm:w-auto"
+          >
+            Create project
+          </Link>
+        )}
       </div>
-    </div>
+
+      <section aria-labelledby="projects-heading" className="mt-10">
+        <div className="flex items-center gap-2">
+          <h2 id="projects-heading" className="tk-section-title">
+            Projects
+          </h2>
+          {projects.length > 0 && (
+            <span className="tk-badge">{projects.length}</span>
+          )}
+        </div>
+
+        {projects.length === 0 ? (
+          <div className="tk-empty mt-4">
+            <h3 className="tk-section-title">No projects yet</h3>
+
+            <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-zinc-600">
+              Projects group related work in this workspace. Create the first
+              one to start adding tasks.
+            </p>
+
+            <Link href={newProjectHref} className="tk-btn tk-btn-primary mt-6">
+              Create project
+            </Link>
+          </div>
+        ) : (
+          <ul className="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+            {projects.map((project) => (
+              <li key={project.id}>
+                <Link
+                  href={`/workspaces/${workspace.slug}/projects/${project.slug}`}
+                  className="tk-card tk-card-interactive flex h-full flex-col p-5"
+                >
+                  <p className="truncate font-semibold text-ink">{project.name}</p>
+
+                  <p className="mt-2 line-clamp-2 flex-1 text-sm leading-6 text-zinc-600">
+                    {project.description || "No description."}
+                  </p>
+
+                  <p className="mt-4 border-t border-line pt-4 text-sm text-zinc-600">
+                    {project._count.tasks === 1
+                      ? "1 task"
+                      : `${project._count.tasks} tasks`}
+                  </p>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+    </>
   );
 }
