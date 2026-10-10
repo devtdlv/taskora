@@ -107,7 +107,7 @@ export function KanbanBoard({ projectHref, tasks }: KanbanBoardProps) {
             </div>
 
             {columnTasks.length === 0 ? (
-              <p className="rounded-lg border border-dashed border-zinc-200 px-3 py-6 text-center text-xs text-zinc-400">
+              <p className="rounded-lg border border-dashed border-zinc-300 px-3 py-6 text-center text-xs text-zinc-500">
                 No tasks
               </p>
             ) : (
@@ -115,7 +115,7 @@ export function KanbanBoard({ projectHref, tasks }: KanbanBoardProps) {
                 {columnTasks.map((task) => (
                   <li
                     key={task.id}
-                    className="rounded-lg border border-zinc-200 bg-white p-4 shadow-sm transition hover:border-zinc-300"
+                    className="tk-card tk-card-interactive p-4"
                   >
                     <Link
                       href={`${projectHref}/tasks/${task.id}`}
@@ -150,7 +150,12 @@ export function KanbanBoard({ projectHref, tasks }: KanbanBoardProps) {
                         )
                       }
                       disabled={isBusy}
-                      className="mt-3 block w-full rounded-md border border-zinc-200 bg-white px-2 py-1.5 text-xs text-zinc-700 outline-none focus:border-zinc-950 focus:ring-1 focus:ring-zinc-950 disabled:opacity-60"
+                      aria-describedby={
+                        error?.taskId === task.id
+                          ? `status-error-${task.id}`
+                          : undefined
+                      }
+                      className="tk-input tk-input-sm mt-3"
                     >
                       {COLUMNS.map((status) => (
                         <option key={status} value={status}>
@@ -160,7 +165,10 @@ export function KanbanBoard({ projectHref, tasks }: KanbanBoardProps) {
                     </select>
 
                     {error?.taskId === task.id && (
-                      <p className="mt-2 text-xs text-red-600">
+                      <p
+                        id={`status-error-${task.id}`}
+                        className="tk-field-error"
+                      >
                         {error.message}
                       </p>
                     )}

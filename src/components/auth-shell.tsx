@@ -15,11 +15,11 @@ export function AuthShell({
   footer,
 }: AuthShellProps) {
   return (
-    <main className="grid min-h-screen bg-white text-zinc-950 lg:grid-cols-[0.9fr_1.1fr]">
+    <main className="grid min-h-screen bg-white text-ink lg:grid-cols-[0.9fr_1.1fr]">
       <section className="flex min-h-screen flex-col px-6 py-8 sm:px-10 lg:px-14">
         <Link
           href="/"
-          className="w-fit text-xl font-semibold tracking-tight text-zinc-950"
+          className="w-fit text-xl font-semibold tracking-tight text-ink"
         >
           Taskora
         </Link>
@@ -30,7 +30,7 @@ export function AuthShell({
               Welcome to Taskora
             </p>
 
-            <h1 className="mt-3 text-3xl font-semibold tracking-tight sm:text-4xl">
+            <h1 className="mt-3 text-3xl font-semibold tracking-tight text-ink">
               {title}
             </h1>
 
@@ -46,7 +46,7 @@ export function AuthShell({
           </div>
         </div>
 
-        <p className="text-xs text-zinc-400">
+        <p className="text-xs text-zinc-500">
           © {new Date().getFullYear()} Everything Digital
         </p>
       </section>
@@ -82,28 +82,28 @@ export function AuthShell({
             <div className="mt-10 grid grid-cols-3 gap-6 border-t border-zinc-800 pt-8">
               <div>
                 <p className="text-sm font-medium text-white">Projects</p>
-                <p className="mt-1 text-xs text-zinc-500">
+                <p className="mt-1 text-xs text-zinc-400">
                   Organize the work
                 </p>
               </div>
 
               <div>
                 <p className="text-sm font-medium text-white">Tasks</p>
-                <p className="mt-1 text-xs text-zinc-500">
+                <p className="mt-1 text-xs text-zinc-400">
                   Clarify ownership
                 </p>
               </div>
 
               <div>
                 <p className="text-sm font-medium text-white">Teams</p>
-                <p className="mt-1 text-xs text-zinc-500">
+                <p className="mt-1 text-xs text-zinc-400">
                   Stay aligned
                 </p>
               </div>
             </div>
           </div>
 
-          <p className="text-sm text-zinc-500">Taskora</p>
+          <p className="text-sm text-zinc-400">Taskora</p>
         </div>
       </section>
     </main>

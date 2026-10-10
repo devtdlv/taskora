@@ -61,7 +61,7 @@ const boardColumns = [
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-white text-zinc-950">
+    <div className="min-h-screen bg-white text-ink">
       <SiteHeader />
 
       <main>
@@ -84,14 +84,14 @@ export default function Home() {
             <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
               <Link
                 href="/signup"
-                className="w-full rounded-md bg-zinc-950 px-5 py-3 text-sm font-medium text-white transition-colors hover:bg-zinc-800 sm:w-auto"
+                className="tk-btn tk-btn-primary tk-btn-lg w-full px-5 sm:w-auto"
               >
                 Start for free
               </Link>
 
               <a
                 href="#features"
-                className="w-full rounded-md border border-zinc-300 px-5 py-3 text-sm font-medium transition-colors hover:bg-zinc-50 sm:w-auto"
+                className="tk-btn tk-btn-secondary tk-btn-lg w-full px-5 sm:w-auto"
               >
                 See how it works
               </a>
@@ -223,7 +223,7 @@ export default function Home() {
                 ],
               ].map(([number, title, description]) => (
                 <div key={number} className="flex gap-4">
-                  <span className="text-sm font-medium text-zinc-400">
+                  <span className="text-sm font-medium text-zinc-500">
                     {number}
                   </span>
 
@@ -297,7 +297,7 @@ export default function Home() {
                 <div>
                   <div className="flex items-center gap-2">
                     <span className="text-sm font-medium">Alex Lee</span>
-                    <span className="text-xs text-zinc-500">10:42 AM</span>
+                    <span className="text-xs text-zinc-400">10:42 AM</span>
                   </div>
 
                   <p className="mt-2 text-sm leading-6 text-zinc-300">
@@ -317,7 +317,7 @@ export default function Home() {
                 <div>
                   <div className="flex items-center gap-2">
                     <span className="text-sm font-medium">Theodore</span>
-                    <span className="text-xs text-zinc-500">10:48 AM</span>
+                    <span className="text-xs text-zinc-400">10:48 AM</span>
                   </div>
 
                   <p className="mt-2 text-sm leading-6 text-zinc-300">
@@ -344,7 +344,7 @@ export default function Home() {
 
             <Link
               href="/signup"
-              className="mt-8 inline-block rounded-md bg-zinc-950 px-5 py-3 text-sm font-medium text-white transition-colors hover:bg-zinc-800"
+              className="tk-btn tk-btn-primary tk-btn-lg mt-8 px-5"
             >
               Create your workspace
             </Link>

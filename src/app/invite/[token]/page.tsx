@@ -7,8 +7,7 @@ import { getWorkspaceMembership } from "@/services/workspace.service";
 
 import { AcceptInvitationButton } from "./accept-invitation-button";
 
-const linkButtonClass =
-  "block w-full rounded-lg bg-zinc-950 px-4 py-3 text-center text-sm font-medium text-white shadow-sm transition hover:bg-zinc-800";
+const linkButtonClass = "tk-btn tk-btn-primary tk-btn-lg w-full";
 
 export default async function InvitePage({
   params,
@@ -36,7 +35,7 @@ export default async function InvitePage({
 
           <Link
             href={`/signup?next=${next}`}
-            className="block w-full rounded-lg border border-zinc-300 px-4 py-3 text-center text-sm font-medium transition hover:bg-zinc-50"
+            className="tk-btn tk-btn-secondary tk-btn-lg w-full"
           >
             Create an account
           </Link>

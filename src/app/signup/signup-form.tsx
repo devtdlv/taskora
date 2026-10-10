@@ -91,10 +91,7 @@ export function SignupForm({ redirectPath }: SignupFormProps) {
       footer={
         <>
           Already have an account?{" "}
-          <Link
-            href={`/login${nextQuery}`}
-            className="font-medium text-zinc-950 hover:underline"
-          >
+          <Link href={`/login${nextQuery}`} className="tk-link">
             Log in
           </Link>
         </>
@@ -102,19 +99,13 @@ export function SignupForm({ redirectPath }: SignupFormProps) {
     >
       <form className="space-y-5" onSubmit={handleSubmit}>
         {formError && (
-          <div
-            role="alert"
-            className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
-          >
+          <div role="alert" className="tk-alert-error">
             {formError}
           </div>
         )}
 
         <div>
-          <label
-            htmlFor="name"
-            className="block text-sm font-medium text-zinc-800"
-          >
+          <label htmlFor="name" className="tk-label">
             Full name
           </label>
 
@@ -125,21 +116,19 @@ export function SignupForm({ redirectPath }: SignupFormProps) {
             autoComplete="name"
             placeholder="Your name"
             aria-invalid={Boolean(fieldErrors.name)}
-            className="mt-2 block w-full rounded-lg border border-zinc-300 bg-white px-3.5 py-3 text-sm text-zinc-950 shadow-sm outline-none placeholder:text-zinc-400 focus:border-zinc-950 focus:ring-1 focus:ring-zinc-950"
+            aria-describedby={fieldErrors.name ? "name-error" : undefined}
+            className="tk-input mt-2"
           />
 
           {fieldErrors.name?.[0] && (
-            <p className="mt-2 text-xs text-red-600">
+            <p id="name-error" className="tk-field-error">
               {fieldErrors.name[0]}
             </p>
           )}
         </div>
 
         <div>
-          <label
-            htmlFor="email"
-            className="block text-sm font-medium text-zinc-800"
-          >
+          <label htmlFor="email" className="tk-label">
             Email address
           </label>
 
@@ -150,21 +139,19 @@ export function SignupForm({ redirectPath }: SignupFormProps) {
             autoComplete="email"
             placeholder="you@example.com"
             aria-invalid={Boolean(fieldErrors.email)}
-            className="mt-2 block w-full rounded-lg border border-zinc-300 bg-white px-3.5 py-3 text-sm text-zinc-950 shadow-sm outline-none placeholder:text-zinc-400 focus:border-zinc-950 focus:ring-1 focus:ring-zinc-950"
+            aria-describedby={fieldErrors.email ? "email-error" : undefined}
+            className="tk-input mt-2"
           />
 
           {fieldErrors.email?.[0] && (
-            <p className="mt-2 text-xs text-red-600">
+            <p id="email-error" className="tk-field-error">
               {fieldErrors.email[0]}
             </p>
           )}
         </div>
 
         <div>
-          <label
-            htmlFor="password"
-            className="block text-sm font-medium text-zinc-800"
-          >
+          <label htmlFor="password" className="tk-label">
             Password
           </label>
 
@@ -175,25 +162,25 @@ export function SignupForm({ redirectPath }: SignupFormProps) {
             autoComplete="new-password"
             placeholder="Create a password"
             aria-invalid={Boolean(fieldErrors.password)}
-            className="mt-2 block w-full rounded-lg border border-zinc-300 bg-white px-3.5 py-3 text-sm text-zinc-950 shadow-sm outline-none placeholder:text-zinc-400 focus:border-zinc-950 focus:ring-1 focus:ring-zinc-950"
+            aria-describedby={
+              fieldErrors.password ? "password-error" : "password-hint"
+            }
+            className="tk-input mt-2"
           />
 
           {fieldErrors.password?.[0] ? (
-            <p className="mt-2 text-xs text-red-600">
+            <p id="password-error" className="tk-field-error">
               {fieldErrors.password[0]}
             </p>
           ) : (
-            <p className="mt-2 text-xs text-zinc-500">
+            <p id="password-hint" className="tk-hint">
               Use at least 8 characters.
             </p>
           )}
         </div>
 
         <div>
-          <label
-            htmlFor="confirmPassword"
-            className="block text-sm font-medium text-zinc-800"
-          >
+          <label htmlFor="confirmPassword" className="tk-label">
             Confirm password
           </label>
 
@@ -204,11 +191,14 @@ export function SignupForm({ redirectPath }: SignupFormProps) {
             autoComplete="new-password"
             placeholder="Enter your password again"
             aria-invalid={Boolean(fieldErrors.confirmPassword)}
-            className="mt-2 block w-full rounded-lg border border-zinc-300 bg-white px-3.5 py-3 text-sm text-zinc-950 shadow-sm outline-none placeholder:text-zinc-400 focus:border-zinc-950 focus:ring-1 focus:ring-zinc-950"
+            aria-describedby={
+              fieldErrors.confirmPassword ? "confirmPassword-error" : undefined
+            }
+            className="tk-input mt-2"
           />
 
           {fieldErrors.confirmPassword?.[0] && (
-            <p className="mt-2 text-xs text-red-600">
+            <p id="confirmPassword-error" className="tk-field-error">
               {fieldErrors.confirmPassword[0]}
             </p>
           )}
@@ -221,7 +211,8 @@ export function SignupForm({ redirectPath }: SignupFormProps) {
               name="terms"
               type="checkbox"
               aria-invalid={Boolean(fieldErrors.terms)}
-              className="mt-0.5 h-4 w-4 rounded border-zinc-300"
+              aria-describedby={fieldErrors.terms ? "terms-error" : undefined}
+              className="tk-checkbox mt-0.5"
             />
 
             <label
@@ -229,19 +220,11 @@ export function SignupForm({ redirectPath }: SignupFormProps) {
               className="text-sm leading-5 text-zinc-600"
             >
               I agree to the{" "}
-              <Link
-                href="/terms"
-                target="_blank"
-                className="font-medium text-zinc-950 hover:underline"
-              >
+              <Link href="/terms" target="_blank" className="tk-link">
                 Terms of Service
               </Link>{" "}
               and{" "}
-              <Link
-                href="/privacy"
-                target="_blank"
-                className="font-medium text-zinc-950 hover:underline"
-              >
+              <Link href="/privacy" target="_blank" className="tk-link">
                 Privacy Policy
               </Link>
               .
@@ -249,7 +232,7 @@ export function SignupForm({ redirectPath }: SignupFormProps) {
           </div>
 
           {fieldErrors.terms?.[0] && (
-            <p className="mt-2 text-xs text-red-600">
+            <p id="terms-error" className="tk-field-error">
               {fieldErrors.terms[0]}
             </p>
           )}
@@ -258,7 +241,7 @@ export function SignupForm({ redirectPath }: SignupFormProps) {
         <button
           type="submit"
           disabled={isSubmitting}
-          className="w-full rounded-lg bg-zinc-950 px-4 py-3 text-sm font-medium text-white shadow-sm transition hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-60"
+          className="tk-btn tk-btn-primary tk-btn-lg w-full"
         >
           {isSubmitting ? "Creating account..." : "Create account"}
         </button>

@@ -32,28 +32,31 @@ export default async function ProjectPage({
   const projectHref = `/workspaces/${workspace.slug}/projects/${project.slug}`;
 
   return (
-    <div className="min-h-screen bg-white text-zinc-950">
+    <div className="min-h-screen bg-white text-ink">
       <SiteHeader />
 
       <main className="mx-auto max-w-6xl px-6 py-12">
-        <nav className="flex items-center gap-2 text-sm text-zinc-500">
+        <nav
+          aria-label="Breadcrumb"
+          className="flex flex-wrap items-center gap-2 text-sm text-zinc-600"
+        >
           <Link href="/dashboard" className="hover:text-zinc-950">
             Workspaces
           </Link>
-          <span>/</span>
+          <span aria-hidden="true">/</span>
           <Link
             href={`/workspaces/${workspace.slug}`}
             className="hover:text-zinc-950"
           >
             {workspace.name}
           </Link>
-          <span>/</span>
-          <span className="text-zinc-950">{project.name}</span>
+          <span aria-hidden="true">/</span>
+          <span aria-current="page" className="text-zinc-950">
+            {project.name}
+          </span>
         </nav>
 
-        <h1 className="mt-6 text-3xl font-semibold tracking-tight">
-          {project.name}
-        </h1>
+        <h1 className="tk-page-title mt-6">{project.name}</h1>
 
         {project.description && (
           <p className="mt-3 max-w-2xl whitespace-pre-line text-sm leading-6 text-zinc-600">
@@ -63,12 +66,12 @@ export default async function ProjectPage({
 
         <section className="mt-10">
           <div className="flex items-center justify-between gap-4">
-            <h2 className="text-sm font-medium text-zinc-500">Tasks</h2>
+            <h2 className="tk-section-title">Tasks</h2>
 
             {tasks.length > 0 && (
               <Link
                 href={`${projectHref}/tasks/new`}
-                className="rounded-md bg-zinc-950 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800"
+                className="tk-btn tk-btn-primary"
               >
                 Create task
               </Link>
@@ -76,7 +79,7 @@ export default async function ProjectPage({
           </div>
 
           {tasks.length === 0 ? (
-            <div className="mt-4 rounded-xl border border-dashed border-zinc-300 px-6 py-16 text-center">
+            <div className="mt-4 rounded-lg border border-dashed border-zinc-300 px-6 py-16 text-center">
               <h3 className="font-semibold">No tasks yet</h3>
 
               <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-zinc-600">
@@ -86,7 +89,7 @@ export default async function ProjectPage({
 
               <Link
                 href={`${projectHref}/tasks/new`}
-                className="mt-6 inline-block rounded-md bg-zinc-950 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800"
+                className="tk-btn tk-btn-primary mt-6"
               >
                 Create task
               </Link>

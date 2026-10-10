@@ -28,7 +28,7 @@ export default async function NewProjectPage({
   const { workspace } = membership;
 
   return (
-    <div className="min-h-screen bg-white text-zinc-950">
+    <div className="min-h-screen bg-white text-ink">
       <SiteHeader />
 
       <main className="mx-auto max-w-lg px-6 py-16">
@@ -39,7 +39,7 @@ export default async function NewProjectPage({
           &larr; Back to {workspace.name}
         </Link>
 
-        <h1 className="mt-6 text-3xl font-semibold tracking-tight">
+        <h1 className="tk-page-title mt-6">
           Create a project
         </h1>
 

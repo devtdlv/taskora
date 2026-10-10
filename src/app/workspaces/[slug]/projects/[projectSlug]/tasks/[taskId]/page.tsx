@@ -47,22 +47,25 @@ export default async function TaskPage({
     : null;
 
   return (
-    <div className="min-h-screen bg-white text-zinc-950">
+    <div className="min-h-screen bg-white text-ink">
       <SiteHeader />
 
       <main className="mx-auto max-w-6xl px-6 py-12">
-        <nav className="flex flex-wrap items-center gap-2 text-sm text-zinc-500">
+        <nav
+          aria-label="Breadcrumb"
+          className="flex flex-wrap items-center gap-2 text-sm text-zinc-600"
+        >
           <Link href="/dashboard" className="hover:text-zinc-950">
             Workspaces
           </Link>
-          <span>/</span>
+          <span aria-hidden="true">/</span>
           <Link
             href={`/workspaces/${workspace.slug}`}
             className="hover:text-zinc-950"
           >
             {workspace.name}
           </Link>
-          <span>/</span>
+          <span aria-hidden="true">/</span>
           <Link href={projectHref} className="hover:text-zinc-950">
             {project.name}
           </Link>
@@ -90,7 +93,7 @@ export default async function TaskPage({
             />
           </div>
 
-          <aside className="space-y-6 rounded-xl border border-zinc-200 p-5">
+          <aside className="tk-card space-y-6 p-5">
             <TaskStatusSelect taskUrl={taskUrl} initialStatus={task.status} />
 
             <TaskAssigneeSelect
@@ -103,7 +106,7 @@ export default async function TaskPage({
             />
 
             <div>
-              <p className="text-sm font-medium text-zinc-800">Due date</p>
+              <p className="tk-label">Due date</p>
               <p className="mt-2 text-sm text-zinc-600">
                 {task.dueDate ? formatDueDate(task.dueDate) : "No due date"}
               </p>

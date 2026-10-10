@@ -43,10 +43,7 @@ export function AcceptInvitationButton({ token }: AcceptInvitationButtonProps) {
   return (
     <div className="space-y-4">
       {error && (
-        <div
-          role="alert"
-          className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
-        >
+        <div role="alert" className="tk-alert-error">
           {error}
         </div>
       )}
@@ -55,7 +52,7 @@ export function AcceptInvitationButton({ token }: AcceptInvitationButtonProps) {
         type="button"
         onClick={handleAccept}
         disabled={isSubmitting}
-        className="w-full rounded-lg bg-zinc-950 px-4 py-3 text-sm font-medium text-white shadow-sm transition hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-60"
+        className="tk-btn tk-btn-primary tk-btn-lg w-full"
       >
         {isSubmitting ? "Joining..." : "Accept invitation"}
       </button>

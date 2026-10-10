@@ -121,7 +121,7 @@ export function TaskComments({ taskUrl, comments }: TaskCommentsProps) {
 
   return (
     <section className="mt-10 border-t border-zinc-200 pt-8">
-      <h2 className="text-lg font-semibold">Comments</h2>
+      <h2 className="tk-section-title">Comments</h2>
 
       {comments.length === 0 ? (
         <p className="mt-4 text-sm text-zinc-500">No comments yet.</p>
@@ -130,7 +130,7 @@ export function TaskComments({ taskUrl, comments }: TaskCommentsProps) {
           {comments.map((comment) => (
             <li
               key={comment.id}
-              className="rounded-lg border border-zinc-200 px-4 py-3"
+              className="tk-card px-4 py-3"
             >
               <div className="flex flex-wrap items-baseline justify-between gap-2">
                 <p className="text-sm">
@@ -156,7 +156,7 @@ export function TaskComments({ taskUrl, comments }: TaskCommentsProps) {
                     type="button"
                     onClick={() => handleDelete(comment.id)}
                     disabled={deletingId !== null}
-                    className="text-xs font-medium text-red-700 hover:underline disabled:opacity-60"
+                    className="rounded-sm text-xs font-medium text-red-700 hover:underline disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     {deletingId === comment.id ? "Deleting..." : "Delete"}
                   </button>
@@ -191,11 +191,12 @@ export function TaskComments({ taskUrl, comments }: TaskCommentsProps) {
           maxLength={2000}
           placeholder="Write a comment"
           aria-invalid={Boolean(formError)}
-          className="block w-full resize-y rounded-lg border border-zinc-300 bg-white px-3.5 py-3 text-sm text-zinc-950 shadow-sm outline-none focus:border-zinc-950 focus:ring-1 focus:ring-zinc-950"
+          aria-describedby={formError ? "comment-error" : undefined}
+          className="tk-input tk-textarea"
         />
 
         {formError && (
-          <p role="alert" className="text-xs text-red-600">
+          <p id="comment-error" role="alert" className="tk-field-error">
             {formError}
           </p>
         )}
@@ -203,7 +204,7 @@ export function TaskComments({ taskUrl, comments }: TaskCommentsProps) {
         <button
           type="submit"
           disabled={isPostBusy || body.trim() === ""}
-          className="rounded-lg bg-zinc-950 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-60"
+          className="tk-btn tk-btn-primary"
         >
           {isPostBusy ? "Posting..." : "Post comment"}
         </button>

@@ -55,7 +55,7 @@ export function TaskStatusSelect({
 
   return (
     <div>
-      <label htmlFor="status" className="block text-sm font-medium text-zinc-800">
+      <label htmlFor="status" className="tk-label">
         Status
       </label>
 
@@ -64,7 +64,8 @@ export function TaskStatusSelect({
         value={status}
         onChange={handleChange}
         disabled={isSaving}
-        className="mt-2 block w-full rounded-lg border border-zinc-300 bg-white px-3.5 py-2.5 text-sm text-zinc-950 shadow-sm outline-none focus:border-zinc-950 focus:ring-1 focus:ring-zinc-950 disabled:opacity-60"
+        aria-describedby={error ? "status-error" : undefined}
+        className="tk-input mt-2"
       >
         {Object.entries(TASK_STATUS_LABELS).map(([value, label]) => (
           <option key={value} value={value}>
@@ -73,7 +74,11 @@ export function TaskStatusSelect({
         ))}
       </select>
 
-      {error && <p className="mt-2 text-xs text-red-600">{error}</p>}
+      {error && (
+        <p id="status-error" className="tk-field-error">
+          {error}
+        </p>
+      )}
     </div>
   );
 }

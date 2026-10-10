@@ -13,36 +13,30 @@ export async function SiteHeader() {
         </Link>
 
         {user ? (
-          <nav className="flex items-center gap-6">
+          <nav aria-label="Account" className="flex items-center gap-6">
             <Link
               href="/dashboard"
-              className="text-sm text-zinc-600 hover:text-zinc-950"
+              className="text-sm text-zinc-600 hover:text-zinc-900"
             >
               Dashboard
             </Link>
 
             <form action="/api/auth/logout" method="post">
-              <button
-                type="submit"
-                className="rounded-md border border-zinc-300 px-4 py-2 text-sm font-medium hover:bg-zinc-50"
-              >
+              <button type="submit" className="tk-btn tk-btn-secondary">
                 Log out
               </button>
             </form>
           </nav>
         ) : (
-          <nav className="flex items-center gap-6">
+          <nav aria-label="Account" className="flex items-center gap-6">
             <Link
               href="/login"
-              className="text-sm text-zinc-600 hover:text-zinc-950"
+              className="text-sm text-zinc-600 hover:text-zinc-900"
             >
               Log in
             </Link>
 
-            <Link
-              href="/signup"
-              className="rounded-md bg-zinc-950 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800"
-            >
+            <Link href="/signup" className="tk-btn tk-btn-primary">
               Get started
             </Link>
           </nav>

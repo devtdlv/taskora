@@ -107,28 +107,28 @@ export function InviteMemberForm({ workspaceSlug }: InviteMemberFormProps) {
             autoComplete="off"
             placeholder="person@example.com"
             aria-invalid={Boolean(emailError)}
-            className="block w-full rounded-lg border border-zinc-300 bg-white px-3.5 py-2.5 text-sm text-zinc-950 shadow-sm outline-none placeholder:text-zinc-400 focus:border-zinc-950 focus:ring-1 focus:ring-zinc-950"
+            aria-describedby={emailError ? "email-error" : undefined}
+            className="tk-input"
           />
 
           {emailError && (
-            <p className="mt-2 text-xs text-red-600">{emailError}</p>
+            <p id="email-error" className="tk-field-error">
+              {emailError}
+            </p>
           )}
         </div>
 
         <button
           type="submit"
           disabled={isSubmitting}
-          className="rounded-lg bg-zinc-950 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-60"
+          className="tk-btn tk-btn-primary tk-btn-lg"
         >
           {isSubmitting ? "Creating..." : "Create invitation"}
         </button>
       </form>
 
       {formError && (
-        <div
-          role="alert"
-          className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
-        >
+        <div role="alert" className="tk-alert-error">
           {formError}
         </div>
       )}
@@ -150,13 +150,13 @@ export function InviteMemberForm({ workspaceSlug }: InviteMemberFormProps) {
               value={invitation.url}
               onFocus={(event) => event.currentTarget.select()}
               aria-label="Invitation link"
-              className="block w-full rounded-lg border border-green-200 bg-white px-3 py-2 text-sm text-zinc-950 outline-none"
+              className="tk-input"
             />
 
             <button
               type="button"
               onClick={handleCopy}
-              className="rounded-lg border border-green-300 bg-white px-4 py-2 text-sm font-medium text-green-800 hover:bg-green-100"
+              className="tk-btn tk-btn-secondary tk-btn-lg"
             >
               Copy link
             </button>

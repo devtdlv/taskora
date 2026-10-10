@@ -77,10 +77,7 @@ export function LoginForm({ redirectPath }: LoginFormProps) {
       footer={
         <>
           New to Taskora?{" "}
-          <Link
-            href={`/signup${nextQuery}`}
-            className="font-medium text-zinc-950 hover:underline"
-          >
+          <Link href={`/signup${nextQuery}`} className="tk-link">
             Create an account
           </Link>
         </>
@@ -88,19 +85,13 @@ export function LoginForm({ redirectPath }: LoginFormProps) {
     >
       <form className="space-y-5" onSubmit={handleSubmit}>
         {formError && (
-          <div
-            role="alert"
-            className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
-          >
+          <div role="alert" className="tk-alert-error">
             {formError}
           </div>
         )}
 
         <div>
-          <label
-            htmlFor="email"
-            className="block text-sm font-medium text-zinc-800"
-          >
+          <label htmlFor="email" className="tk-label">
             Email address
           </label>
 
@@ -111,21 +102,19 @@ export function LoginForm({ redirectPath }: LoginFormProps) {
             autoComplete="email"
             placeholder="you@example.com"
             aria-invalid={Boolean(fieldErrors.email)}
-            className="mt-2 block w-full rounded-lg border border-zinc-300 bg-white px-3.5 py-3 text-sm text-zinc-950 shadow-sm outline-none placeholder:text-zinc-400 focus:border-zinc-950 focus:ring-1 focus:ring-zinc-950"
+            aria-describedby={fieldErrors.email ? "email-error" : undefined}
+            className="tk-input mt-2"
           />
 
           {fieldErrors.email?.[0] && (
-            <p className="mt-2 text-xs text-red-600">
+            <p id="email-error" className="tk-field-error">
               {fieldErrors.email[0]}
             </p>
           )}
         </div>
 
         <div>
-          <label
-            htmlFor="password"
-            className="block text-sm font-medium text-zinc-800"
-          >
+          <label htmlFor="password" className="tk-label">
             Password
           </label>
 
@@ -135,11 +124,14 @@ export function LoginForm({ redirectPath }: LoginFormProps) {
             type="password"
             autoComplete="current-password"
             aria-invalid={Boolean(fieldErrors.password)}
-            className="mt-2 block w-full rounded-lg border border-zinc-300 bg-white px-3.5 py-3 text-sm text-zinc-950 shadow-sm outline-none focus:border-zinc-950 focus:ring-1 focus:ring-zinc-950"
+            aria-describedby={
+              fieldErrors.password ? "password-error" : undefined
+            }
+            className="tk-input mt-2"
           />
 
           {fieldErrors.password?.[0] && (
-            <p className="mt-2 text-xs text-red-600">
+            <p id="password-error" className="tk-field-error">
               {fieldErrors.password[0]}
             </p>
           )}
@@ -150,7 +142,7 @@ export function LoginForm({ redirectPath }: LoginFormProps) {
             id="remember"
             name="remember"
             type="checkbox"
-            className="h-4 w-4 rounded border-zinc-300"
+            className="tk-checkbox"
           />
 
           <label htmlFor="remember" className="text-sm text-zinc-600">
@@ -161,7 +153,7 @@ export function LoginForm({ redirectPath }: LoginFormProps) {
         <button
           type="submit"
           disabled={isSubmitting}
-          className="w-full rounded-lg bg-zinc-950 px-4 py-3 text-sm font-medium text-white shadow-sm transition hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-60"
+          className="tk-btn tk-btn-primary tk-btn-lg w-full"
         >
           {isSubmitting ? "Logging in..." : "Log in"}
         </button>
