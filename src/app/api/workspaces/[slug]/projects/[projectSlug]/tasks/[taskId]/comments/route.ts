@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { invalidJsonResponse, readJsonBody } from "@/lib/request";
 import { getCurrentUser } from "@/lib/session";
 import { createCommentSchema } from "@/lib/validations/comment";
 import { createTaskComment } from "@/services/comment.service";
@@ -23,7 +24,11 @@ export async function POST(
       );
     }
 
-    const body = await request.json().catch(() => null);
+    const body = await readJsonBody(request);
+
+    if (body === undefined) {
+      return invalidJsonResponse();
+    }
 
     const result = createCommentSchema.safeParse(body);
 

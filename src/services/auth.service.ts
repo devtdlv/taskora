@@ -1,5 +1,6 @@
 import bcrypt from "bcrypt";
 
+import { Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
 import type { LoginInput, SignupInput } from "@/lib/validations/auth";
 
@@ -16,21 +17,34 @@ export async function createUser(input: SignupInput) {
 
   const passwordHash = await bcrypt.hash(input.password, 12);
 
-  const user = await prisma.user.create({
-    data: {
-      name: input.name,
-      email: input.email,
-      passwordHash,
-    },
-    select: {
-      id: true,
-      name: true,
-      email: true,
-      createdAt: true,
-    },
-  });
+  try {
+    return await prisma.user.create({
+      data: {
+        name: input.name,
+        email: input.email,
+        passwordHash,
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        createdAt: true,
+      },
+    });
+  } catch (error) {
+    // A concurrent signup can claim the email between the lookup and the insert.
+    const isEmailTaken =
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === "P2002" &&
+      Array.isArray(error.meta?.target) &&
+      error.meta.target.includes("email");
 
-  return user;
+    if (isEmailTaken) {
+      throw new Error("EMAIL_ALREADY_EXISTS");
+    }
+
+    throw error;
+  }
 }
 
 export async function verifyCredentials(input: LoginInput) {

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { invalidJsonResponse, readJsonBody } from "@/lib/request";
 import { getCurrentUser } from "@/lib/session";
 import {
   updateTaskSchema,
@@ -29,7 +30,11 @@ export async function PATCH(request: Request, { params }: TaskRouteContext) {
       );
     }
 
-    const body = await request.json();
+    const body = await readJsonBody(request);
+
+    if (body === undefined) {
+      return invalidJsonResponse();
+    }
 
     const result = updateTaskStatusSchema.safeParse(body);
 
@@ -90,7 +95,11 @@ export async function PUT(request: Request, { params }: TaskRouteContext) {
       );
     }
 
-    const body = await request.json();
+    const body = await readJsonBody(request);
+
+    if (body === undefined) {
+      return invalidJsonResponse();
+    }
 
     const result = updateTaskSchema.safeParse(body);
 

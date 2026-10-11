@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { isTrustedOrigin } from "@/lib/origin";
+import { invalidJsonResponse, readJsonBody } from "@/lib/request";
 import { createSession } from "@/lib/session";
 import { createUser } from "@/services/auth.service";
 import { signupSchema } from "@/lib/validations/auth";
@@ -17,7 +18,11 @@ export async function POST(request: Request) {
       );
     }
 
-    const body = await request.json();
+    const body = await readJsonBody(request);
+
+    if (body === undefined) {
+      return invalidJsonResponse();
+    }
 
     const result = signupSchema.safeParse(body);
 

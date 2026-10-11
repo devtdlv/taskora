@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { invalidJsonResponse, readJsonBody } from "@/lib/request";
 import { getCurrentUser } from "@/lib/session";
 import { updateTaskAssigneeSchema } from "@/lib/validations/task";
 import { updateTaskAssignee } from "@/services/task.service";
@@ -23,7 +24,11 @@ export async function PUT(
       );
     }
 
-    const body = await request.json();
+    const body = await readJsonBody(request);
+
+    if (body === undefined) {
+      return invalidJsonResponse();
+    }
 
     const result = updateTaskAssigneeSchema.safeParse(body);
 

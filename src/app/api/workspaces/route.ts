@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { invalidJsonResponse, readJsonBody } from "@/lib/request";
 import { getCurrentUser } from "@/lib/session";
 import { createWorkspaceSchema } from "@/lib/validations/workspace";
 import { createWorkspace } from "@/services/workspace.service";
@@ -18,7 +19,11 @@ export async function POST(request: Request) {
       );
     }
 
-    const body = await request.json();
+    const body = await readJsonBody(request);
+
+    if (body === undefined) {
+      return invalidJsonResponse();
+    }
 
     const result = createWorkspaceSchema.safeParse(body);
 

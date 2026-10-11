@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { invalidJsonResponse, readJsonBody } from "@/lib/request";
 import { getCurrentUser } from "@/lib/session";
 import { acceptInvitationSchema } from "@/lib/validations/invitation";
 import { acceptWorkspaceInvitation } from "@/services/invitation.service";
@@ -37,7 +38,11 @@ export async function POST(request: Request) {
       );
     }
 
-    const body = await request.json();
+    const body = await readJsonBody(request);
+
+    if (body === undefined) {
+      return invalidJsonResponse();
+    }
 
     const result = acceptInvitationSchema.safeParse(body);
 
