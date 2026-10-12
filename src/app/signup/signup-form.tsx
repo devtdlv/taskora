@@ -105,7 +105,7 @@ export function SignupForm({ redirectPath }: SignupFormProps) {
         </>
       }
     >
-      <form className="space-y-5" onSubmit={handleSubmit}>
+      <form method="post" className="space-y-5" onSubmit={handleSubmit}>
         {formError && (
           <div role="alert" className="tk-alert-error">
             {formError}

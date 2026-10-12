@@ -3,6 +3,8 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
+import { formatWait } from "@/lib/format-wait";
+
 type ResendVerificationProps = {
   email: string;
   initialNotice: "sent" | "failed" | null;
@@ -19,20 +21,6 @@ type Status =
 // Only countdowns this short are shown on the button. Longer waits, such as
 // the daily limit, are explained in the message instead.
 const MAX_COUNTDOWN_SECONDS = 120;
-
-function formatWait(seconds: number) {
-  if (seconds < 60) {
-    return seconds === 1 ? "1 second" : `${seconds} seconds`;
-  }
-
-  if (seconds < 60 * 60) {
-    const minutes = Math.ceil(seconds / 60);
-    return minutes === 1 ? "1 minute" : `${minutes} minutes`;
-  }
-
-  const hours = Math.ceil(seconds / (60 * 60));
-  return hours === 1 ? "1 hour" : `${hours} hours`;
-}
 
 export function ResendVerification({
   email,

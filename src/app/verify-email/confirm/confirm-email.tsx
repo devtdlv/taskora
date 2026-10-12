@@ -1,7 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useRef, useState, useSyncExternalStore } from "react";
+import { useRef, useState } from "react";
+
+import { clearUrlFragment, useFragmentToken } from "@/lib/url-fragment";
 
 type ConfirmEmailProps = {
   isSignedIn: boolean;
@@ -10,35 +12,11 @@ type ConfirmEmailProps = {
 
 type Status = "ready" | "verifying" | "verified" | "invalid" | "error";
 
-function subscribe(onChange: () => void) {
-  window.addEventListener("hashchange", onChange);
-  return () => window.removeEventListener("hashchange", onChange);
-}
-
-function getHash() {
-  return window.location.hash;
-}
-
-// The server never sees the fragment, so it renders the loading state.
-function getServerHash() {
-  return null;
-}
-
-// Removes the token from the address bar and the current history entry, while
-// keeping the router's history state intact.
-function clearFragment() {
-  const { pathname, search } = window.location;
-  window.history.replaceState(window.history.state, "", pathname + search);
-}
-
 export function ConfirmEmail({ isSignedIn, lifetimeHours }: ConfirmEmailProps) {
-  const hash = useSyncExternalStore(subscribe, getHash, getServerHash);
+  const token = useFragmentToken();
   const [status, setStatus] = useState<Status>("ready");
   const [errorMessage, setErrorMessage] = useState("");
   const inFlight = useRef(false);
-
-  const token =
-    hash === null ? undefined : new URLSearchParams(hash.slice(1)).get("token");
 
   const requestNewLink = isSignedIn
     ? "/verify-email"
@@ -66,13 +44,13 @@ export function ConfirmEmail({ isSignedIn, lifetimeHours }: ConfirmEmailProps) {
 
       if (response.ok) {
         setStatus("verified");
-        clearFragment();
+        clearUrlFragment();
         return;
       }
 
       if (data.error === "INVALID_OR_EXPIRED_TOKEN") {
         setStatus("invalid");
-        clearFragment();
+        clearUrlFragment();
         return;
       }
 

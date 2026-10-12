@@ -83,7 +83,7 @@ export function LoginForm({ redirectPath }: LoginFormProps) {
         </>
       }
     >
-      <form className="space-y-5" onSubmit={handleSubmit}>
+      <form method="post" className="space-y-5" onSubmit={handleSubmit}>
         {formError && (
           <div role="alert" className="tk-alert-error">
             {formError}
@@ -114,9 +114,15 @@ export function LoginForm({ redirectPath }: LoginFormProps) {
         </div>
 
         <div>
-          <label htmlFor="password" className="tk-label">
-            Password
-          </label>
+          <div className="flex items-center justify-between gap-4">
+            <label htmlFor="password" className="tk-label">
+              Password
+            </label>
+
+            <Link href="/forgot-password" className="tk-link text-sm">
+              Forgot password?
+            </Link>
+          </div>
 
           <input
             id="password"

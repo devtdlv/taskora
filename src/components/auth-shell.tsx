@@ -5,7 +5,7 @@ type AuthShellProps = {
   title: string;
   description: string;
   children: ReactNode;
-  footer: ReactNode;
+  footer?: ReactNode;
 };
 
 export function AuthShell({
@@ -41,9 +41,11 @@ export function AuthShell({
 
           <div className="mt-9">{children}</div>
 
-          <div className="mt-8 text-center text-sm text-zinc-600">
-            {footer}
-          </div>
+          {footer && (
+            <div className="mt-8 text-center text-sm text-zinc-600">
+              {footer}
+            </div>
+          )}
         </div>
 
         <p className="text-xs text-zinc-500">
