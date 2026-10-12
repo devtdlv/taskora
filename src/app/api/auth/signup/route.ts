@@ -4,6 +4,7 @@ import { isTrustedOrigin } from "@/lib/origin";
 import { invalidJsonResponse, readJsonBody } from "@/lib/request";
 import { createSession } from "@/lib/session";
 import { createUser } from "@/services/auth.service";
+import { sendEmailVerification } from "@/services/email-verification.service";
 import { signupSchema } from "@/lib/validations/auth";
 
 export async function POST(request: Request) {
@@ -40,9 +41,21 @@ export async function POST(request: Request) {
 
     await createSession(user.id, false);
 
+    // The account already exists, so a delivery problem doesn't fail signup.
+    // The user can request another email once they're signed in.
+    let verificationEmail: "sent" | "failed" = "failed";
+
+    try {
+      const verification = await sendEmailVerification(user.id);
+      verificationEmail = verification.status === "sent" ? "sent" : "failed";
+    } catch (error) {
+      console.error("Verification email after signup failed:", error);
+    }
+
     return NextResponse.json(
       {
         user,
+        verificationEmail,
       },
       { status: 201 },
     );

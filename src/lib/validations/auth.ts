@@ -45,3 +45,14 @@ export const loginSchema = z.object({
 });
 
 export type LoginInput = z.infer<typeof loginSchema>;
+
+// Emailed tokens are always 32 random bytes encoded as base64url.
+const authTokenSchema = z.string().regex(/^[A-Za-z0-9_-]{43}$/);
+
+export const verifyEmailSchema = z
+  .object({
+    token: authTokenSchema,
+  })
+  .strict();
+
+export const resendVerificationSchema = z.object({}).strict();
