@@ -1,4 +1,3 @@
-import type { Prisma } from "@/generated/prisma/client";
 import { sendVerificationEmail, type SendEmailResult } from "@/lib/email";
 import { prisma } from "@/lib/prisma";
 import {
@@ -6,25 +5,7 @@ import {
   generateHashedToken,
   hashToken,
 } from "@/lib/token";
-
-type LockedUser = {
-  email: string;
-  emailVerifiedAt: Date | null;
-};
-
-// Both issuing and consuming a token lock the user row first. That serializes
-// concurrent requests for the same account and keeps the lock order the same
-// everywhere, so the two can't deadlock each other.
-async function lockUser(tx: Prisma.TransactionClient, userId: string) {
-  const [user] = await tx.$queryRaw<LockedUser[]>`
-    SELECT "email", "emailVerifiedAt"
-    FROM "users"
-    WHERE "id" = ${userId}
-    FOR UPDATE
-  `;
-
-  return user ?? null;
-}
+import { lockUser } from "@/services/user-lock";
 
 type IssueResult =
   | { status: "issued"; email: string; token: string }

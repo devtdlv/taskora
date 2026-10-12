@@ -56,3 +56,38 @@ export const verifyEmailSchema = z
   .strict();
 
 export const resendVerificationSchema = z.object({}).strict();
+
+export const forgotPasswordSchema = z
+  .object({
+    email: z
+      .string()
+      .trim()
+      .email("Enter a valid email address.")
+      .transform((email) => email.toLowerCase()),
+  })
+  .strict();
+
+// bcrypt only reads the first 72 bytes of a password and silently ignores the
+// rest. Characters outside ASCII take more than one byte each.
+const BCRYPT_MAX_PASSWORD_BYTES = 72;
+
+const newPasswordSchema = z
+  .string()
+  .min(8, "Password must be at least 8 characters.")
+  .refine(
+    (password) =>
+      new TextEncoder().encode(password).length <= BCRYPT_MAX_PASSWORD_BYTES,
+    "Password must be 72 characters or fewer. Some characters, such as emoji, count as more than one.",
+  );
+
+export const resetPasswordSchema = z
+  .object({
+    token: authTokenSchema,
+    password: newPasswordSchema,
+    confirmPassword: z.string(),
+  })
+  .strict()
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords do not match.",
+    path: ["confirmPassword"],
+  });
