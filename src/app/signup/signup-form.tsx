@@ -74,7 +74,15 @@ export function SignupForm({ redirectPath }: SignupFormProps) {
         return;
       }
 
-      router.push(redirectPath);
+      const verifyParams = new URLSearchParams({
+        delivery: data.verificationEmail === "sent" ? "sent" : "failed",
+      });
+
+      if (redirectPath !== "/dashboard") {
+        verifyParams.set("next", redirectPath);
+      }
+
+      router.push(`/verify-email?${verifyParams}`);
     } catch {
       setFormError(
         "Something went wrong while creating your account. Please try again.",
