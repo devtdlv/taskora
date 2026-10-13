@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
 
 import { AuthShell } from "@/components/auth-shell";
+import { formatWait } from "@/lib/format-wait";
 
 type FieldErrors = {
   email?: string[];
@@ -55,6 +56,18 @@ export function LoginForm({ redirectPath }: LoginFormProps) {
       if (!response.ok) {
         if (data.error === "VALIDATION_ERROR") {
           setFieldErrors(data.fields ?? {});
+          return;
+        }
+
+        if (data.error === "RATE_LIMITED") {
+          const wait =
+            typeof data.retryAfterSeconds === "number"
+              ? `about ${formatWait(data.retryAfterSeconds)}`
+              : "a few minutes";
+
+          setFormError(
+            `Too many login attempts. Try again in ${wait}, or reset your password.`,
+          );
           return;
         }
 

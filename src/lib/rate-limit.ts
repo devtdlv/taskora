@@ -2,6 +2,7 @@ import "server-only";
 
 import { createHmac } from "node:crypto";
 import { isIP } from "node:net";
+import { after } from "next/server";
 
 import { prisma } from "@/lib/prisma";
 
@@ -50,10 +51,32 @@ export const RATE_LIMITS = {
     limit: 20,
     windowSeconds: 15 * MINUTE,
   },
+  signupByEmail: {
+    name: "signup:email",
+    limit: 5,
+    windowSeconds: HOUR,
+  },
+  signupByIp: {
+    name: "signup:ip",
+    limit: 10,
+    windowSeconds: HOUR,
+  },
+  loginByEmail: {
+    name: "login:email",
+    limit: 10,
+    windowSeconds: 15 * MINUTE,
+  },
+  loginByIp: {
+    name: "login:ip",
+    limit: 30,
+    windowSeconds: 15 * MINUTE,
+  },
 } satisfies Record<string, RateLimitRule>;
 
 const UNAVAILABLE_RETRY_AFTER_SECONDS = 60;
 const MIN_SECRET_LENGTH = 32;
+const CLEANUP_PROBABILITY = 0.01;
+const CLEANUP_BATCH_SIZE = 500;
 
 const UNAVAILABLE: RateLimitResult = {
   allowed: false,
@@ -95,6 +118,16 @@ export async function consumeRateLimit(
   }
 
   const key = hashKey(secret, rule, identifier);
+
+  if (Math.random() < CLEANUP_PROBABILITY) {
+    after(async () => {
+      try {
+        await deleteExpiredRateLimits();
+      } catch (error) {
+        console.error("Rate limit cleanup failed:", error);
+      }
+    });
+  }
 
   try {
     const [row] = await prisma.$queryRaw<
@@ -144,11 +177,22 @@ export async function consumeRateLimit(
 }
 
 // Expired rows are harmless, because the next attempt starts a new window, but
-// they accumulate. This is meant to run from a scheduled job.
+// they accumulate. About one in a hundred rate-limit checks clears a batch
+// after its response is sent, which keeps the table small without a scheduled
+// job. The batch cap keeps each run short.
+//
+// Racing an upsert is safe. If the upsert renews a row first, Postgres
+// rechecks the condition before deleting and skips it. If the delete wins,
+// the upsert inserts a fresh row, which is what an expired row resets to.
 export async function deleteExpiredRateLimits() {
   return prisma.$executeRaw`
     DELETE FROM "rate_limits"
-    WHERE "resetAt" <= (CURRENT_TIMESTAMP AT TIME ZONE 'UTC')
+    WHERE "key" IN (
+      SELECT "key" FROM "rate_limits"
+      WHERE "resetAt" <= (CURRENT_TIMESTAMP AT TIME ZONE 'UTC')
+      LIMIT ${CLEANUP_BATCH_SIZE}
+    )
+    AND "resetAt" <= (CURRENT_TIMESTAMP AT TIME ZONE 'UTC')
   `;
 }
 

@@ -1,6 +1,9 @@
-import bcrypt from "bcrypt";
-
 import { Prisma } from "@/generated/prisma/client";
+import {
+  hashPassword,
+  verifyAgainstDummyHash,
+  verifyPassword,
+} from "@/lib/password";
 import { prisma } from "@/lib/prisma";
 import type { LoginInput, SignupInput } from "@/lib/validations/auth";
 
@@ -15,7 +18,7 @@ export async function createUser(input: SignupInput) {
     throw new Error("EMAIL_ALREADY_EXISTS");
   }
 
-  const passwordHash = await bcrypt.hash(input.password, 12);
+  const passwordHash = await hashPassword(input.password);
 
   try {
     return await prisma.user.create({
@@ -54,11 +57,14 @@ export async function verifyCredentials(input: LoginInput) {
     },
   });
 
+  // Returning straight away would make unknown emails answer faster than
+  // registered ones, revealing which addresses have accounts.
   if (!user) {
+    await verifyAgainstDummyHash(input.password);
     return null;
   }
 
-  const passwordMatches = await bcrypt.compare(
+  const passwordMatches = await verifyPassword(
     input.password,
     user.passwordHash,
   );

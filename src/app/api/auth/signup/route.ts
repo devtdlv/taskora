@@ -1,7 +1,16 @@
 import { NextResponse } from "next/server";
 
 import { isTrustedOrigin } from "@/lib/origin";
-import { invalidJsonResponse, readJsonBody } from "@/lib/request";
+import {
+  consumeRateLimit,
+  getTrustedClientIp,
+  RATE_LIMITS,
+} from "@/lib/rate-limit";
+import {
+  invalidJsonResponse,
+  rateLimitedResponse,
+  readJsonBody,
+} from "@/lib/request";
 import { createSession } from "@/lib/session";
 import { createUser } from "@/services/auth.service";
 import { sendEmailVerification } from "@/services/email-verification.service";
@@ -17,6 +26,18 @@ export async function POST(request: Request) {
         },
         { status: 403 },
       );
+    }
+
+    // Each signup sends a verification email, so this caps how many accounts
+    // and emails one client can trigger.
+    const ip = getTrustedClientIp(request);
+
+    if (ip) {
+      const limit = await consumeRateLimit(RATE_LIMITS.signupByIp, ip);
+
+      if (!limit.allowed) {
+        return rateLimitedResponse(limit);
+      }
     }
 
     const body = await readJsonBody(request);
@@ -35,6 +56,17 @@ export async function POST(request: Request) {
         },
         { status: 400 },
       );
+    }
+
+    // Counted before the account lookup, so hitting the limit says nothing
+    // about whether the address is registered.
+    const emailLimit = await consumeRateLimit(
+      RATE_LIMITS.signupByEmail,
+      result.data.email,
+    );
+
+    if (!emailLimit.allowed) {
+      return rateLimitedResponse(emailLimit);
     }
 
     const user = await createUser(result.data);

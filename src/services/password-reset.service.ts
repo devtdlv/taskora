@@ -1,6 +1,5 @@
-import bcrypt from "bcrypt";
-
 import { sendPasswordResetEmail, type SendEmailResult } from "@/lib/email";
+import { hashPassword } from "@/lib/password";
 import { prisma } from "@/lib/prisma";
 import {
   generateHashedToken,
@@ -8,8 +7,6 @@ import {
   PASSWORD_RESET_TOKEN_LIFETIME_MS,
 } from "@/lib/token";
 import { lockUser } from "@/services/user-lock";
-
-const BCRYPT_COST = 12;
 
 type IssueResult =
   | { status: "issued"; email: string; token: string }
@@ -115,7 +112,7 @@ export async function resetPassword(token: string, password: string) {
 
   // Hashed before the transaction so the row lock isn't held for the
   // deliberately slow bcrypt work.
-  const passwordHash = await bcrypt.hash(password, BCRYPT_COST);
+  const passwordHash = await hashPassword(password);
 
   return prisma.$transaction(async (tx) => {
     const record = await tx.authToken.findUnique({

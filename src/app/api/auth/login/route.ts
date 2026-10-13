@@ -1,7 +1,16 @@
 import { NextResponse } from "next/server";
 
 import { isTrustedOrigin } from "@/lib/origin";
-import { invalidJsonResponse, readJsonBody } from "@/lib/request";
+import {
+  consumeRateLimit,
+  getTrustedClientIp,
+  RATE_LIMITS,
+} from "@/lib/rate-limit";
+import {
+  invalidJsonResponse,
+  rateLimitedResponse,
+  readJsonBody,
+} from "@/lib/request";
 import { createSession } from "@/lib/session";
 import { loginSchema } from "@/lib/validations/auth";
 import { verifyCredentials } from "@/services/auth.service";
@@ -16,6 +25,16 @@ export async function POST(request: Request) {
         },
         { status: 403 },
       );
+    }
+
+    const ip = getTrustedClientIp(request);
+
+    if (ip) {
+      const limit = await consumeRateLimit(RATE_LIMITS.loginByIp, ip);
+
+      if (!limit.allowed) {
+        return rateLimitedResponse(limit);
+      }
     }
 
     const body = await readJsonBody(request);
@@ -34,6 +53,18 @@ export async function POST(request: Request) {
         },
         { status: 400 },
       );
+    }
+
+    // Checked before the account lookup and the bcrypt comparison, and counted
+    // for every attempt, so a limited response says nothing about the account
+    // and a correct password can't skip an active limit.
+    const emailLimit = await consumeRateLimit(
+      RATE_LIMITS.loginByEmail,
+      result.data.email,
+    );
+
+    if (!emailLimit.allowed) {
+      return rateLimitedResponse(emailLimit);
     }
 
     const user = await verifyCredentials(result.data);

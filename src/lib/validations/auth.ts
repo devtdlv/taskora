@@ -1,5 +1,23 @@
 import { z } from "zod";
 
+// bcrypt only reads the first 72 bytes of a password and silently ignores the
+// rest. Characters outside ASCII take more than one byte each.
+export const MAX_PASSWORD_BYTES = 72;
+
+export function passwordByteLength(password: string) {
+  return new TextEncoder().encode(password).length;
+}
+
+// Every path that sets a password uses this, so none of them can store a
+// password that bcrypt would truncate.
+const newPasswordSchema = z
+  .string()
+  .min(8, "Password must be at least 8 characters.")
+  .refine(
+    (password) => passwordByteLength(password) <= MAX_PASSWORD_BYTES,
+    "Password must be 72 characters or fewer. Some characters, such as emoji, count as more than one.",
+  );
+
 export const signupSchema = z
   .object({
     name: z
@@ -14,10 +32,7 @@ export const signupSchema = z
       .email("Enter a valid email address.")
       .transform((email) => email.toLowerCase()),
 
-    password: z
-      .string()
-      .min(8, "Password must be at least 8 characters.")
-      .max(72, "Password must be 72 characters or fewer."),
+    password: newPasswordSchema,
 
     confirmPassword: z.string(),
 
@@ -66,19 +81,6 @@ export const forgotPasswordSchema = z
       .transform((email) => email.toLowerCase()),
   })
   .strict();
-
-// bcrypt only reads the first 72 bytes of a password and silently ignores the
-// rest. Characters outside ASCII take more than one byte each.
-const BCRYPT_MAX_PASSWORD_BYTES = 72;
-
-const newPasswordSchema = z
-  .string()
-  .min(8, "Password must be at least 8 characters.")
-  .refine(
-    (password) =>
-      new TextEncoder().encode(password).length <= BCRYPT_MAX_PASSWORD_BYTES,
-    "Password must be 72 characters or fewer. Some characters, such as emoji, count as more than one.",
-  );
 
 export const resetPasswordSchema = z
   .object({
