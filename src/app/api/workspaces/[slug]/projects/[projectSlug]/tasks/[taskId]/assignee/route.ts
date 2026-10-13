@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
+import { requireVerifiedApiUser } from "@/lib/auth-guard";
 import { invalidJsonResponse, readJsonBody } from "@/lib/request";
-import { getCurrentUser } from "@/lib/session";
 import { updateTaskAssigneeSchema } from "@/lib/validations/task";
 import { updateTaskAssignee } from "@/services/task.service";
 
@@ -12,17 +12,15 @@ export async function PUT(
   }: { params: Promise<{ slug: string; projectSlug: string; taskId: string }> },
 ) {
   try {
-    const user = await getCurrentUser();
+    const auth = await requireVerifiedApiUser(
+      "You need to log in to update a task.",
+    );
 
-    if (!user) {
-      return NextResponse.json(
-        {
-          error: "UNAUTHORIZED",
-          message: "You need to log in to update a task.",
-        },
-        { status: 401 },
-      );
+    if (!auth.ok) {
+      return auth.response;
     }
+
+    const { user } = auth;
 
     const body = await readJsonBody(request);
 

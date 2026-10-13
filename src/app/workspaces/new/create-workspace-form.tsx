@@ -3,6 +3,8 @@
 import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
 
+import { verifyEmailPath } from "@/lib/verify-email-path";
+
 type FieldErrors = {
   name?: string[];
 };
@@ -41,6 +43,11 @@ export function CreateWorkspaceForm() {
 
         if (response.status === 401) {
           router.push("/login");
+          return;
+        }
+
+        if (data.error === "EMAIL_NOT_VERIFIED") {
+          router.push(verifyEmailPath(window.location.pathname));
           return;
         }
 

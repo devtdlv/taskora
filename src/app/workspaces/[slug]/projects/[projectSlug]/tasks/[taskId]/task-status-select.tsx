@@ -5,6 +5,7 @@ import { ChangeEvent, useState } from "react";
 
 import type { TaskStatus } from "@/generated/prisma/enums";
 import { TASK_STATUS_LABELS } from "@/lib/task";
+import { verifyEmailPath } from "@/lib/verify-email-path";
 
 type TaskStatusSelectProps = {
   taskUrl: string;
@@ -38,6 +39,11 @@ export function TaskStatusSelect({
       if (!response.ok) {
         if (response.status === 401) {
           router.push("/login");
+          return;
+        }
+
+        if (data.error === "EMAIL_NOT_VERIFIED") {
+          router.push(verifyEmailPath(window.location.pathname));
           return;
         }
 

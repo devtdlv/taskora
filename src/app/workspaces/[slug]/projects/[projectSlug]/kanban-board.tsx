@@ -8,6 +8,7 @@ import { DueDateBadge } from "@/components/due-date-badge";
 import type { TaskStatus } from "@/generated/prisma/enums";
 import { getInitials } from "@/lib/initials";
 import { TASK_STATUS_LABELS } from "@/lib/task";
+import { verifyEmailPath } from "@/lib/verify-email-path";
 
 type BoardTask = {
   id: string;
@@ -62,6 +63,11 @@ export function KanbanBoard({ projectHref, tasks }: KanbanBoardProps) {
       if (!response.ok) {
         if (response.status === 401) {
           router.push("/login");
+          return;
+        }
+
+        if (data.error === "EMAIL_NOT_VERIFIED") {
+          router.push(verifyEmailPath(window.location.pathname));
           return;
         }
 

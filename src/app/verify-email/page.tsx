@@ -3,10 +3,12 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { AuthShell } from "@/components/auth-shell";
+import { isEmailVerificationEnforced } from "@/lib/email-verification-policy";
 import { RATE_LIMITS } from "@/lib/rate-limit";
 import { getSafeRedirectPath } from "@/lib/redirect";
 import { getCurrentUser } from "@/lib/session";
 import { EMAIL_VERIFICATION_TOKEN_LIFETIME_MS } from "@/lib/token";
+import { verifyEmailPath } from "@/lib/verify-email-path";
 
 import { ResendVerification } from "./resend-verification";
 
@@ -25,7 +27,11 @@ export default async function VerifyEmailPage({
   }>;
 }) {
   const { next, delivery } = await searchParams;
-  const redirectPath = getSafeRedirectPath(next);
+  const safePath = getSafeRedirectPath(next);
+  // Sending a verified user back here would bounce between the two pages.
+  const redirectPath = safePath.startsWith("/verify-email")
+    ? "/dashboard"
+    : safePath;
   const user = await getCurrentUser();
 
   if (!user) {
@@ -80,12 +86,23 @@ export default async function VerifyEmailPage({
           cooldownSeconds={RATE_LIMITS.verificationResendCooldown.windowSeconds}
         />
 
-        <Link
-          href={redirectPath}
-          className="tk-btn tk-btn-secondary tk-btn-lg w-full"
-        >
-          Continue to Taskora
-        </Link>
+        {isEmailVerificationEnforced() ? (
+          // A full reload re-runs the check above, which moves a verified
+          // user on to where they were going.
+          <a
+            href={verifyEmailPath(redirectPath)}
+            className="tk-btn tk-btn-secondary tk-btn-lg w-full"
+          >
+            I&apos;ve verified my email
+          </a>
+        ) : (
+          <Link
+            href={redirectPath}
+            className="tk-btn tk-btn-secondary tk-btn-lg w-full"
+          >
+            Continue to Taskora
+          </Link>
+        )}
       </div>
     </AuthShell>
   );

@@ -3,6 +3,8 @@
 import { useRouter } from "next/navigation";
 import { FormEvent, useState, useTransition } from "react";
 
+import { verifyEmailPath } from "@/lib/verify-email-path";
+
 type FieldErrors = {
   title?: string[];
   description?: string[];
@@ -70,6 +72,11 @@ export function TaskDetails({
           return;
         }
 
+        if (data.error === "EMAIL_NOT_VERIFIED") {
+          router.push(verifyEmailPath(window.location.pathname));
+          return;
+        }
+
         if (data.error === "VALIDATION_ERROR") {
           setFieldErrors(data.fields ?? {});
           return;
@@ -116,6 +123,12 @@ export function TaskDetails({
       }
 
       const data = await response.json();
+
+      if (data.error === "EMAIL_NOT_VERIFIED") {
+        router.push(verifyEmailPath(window.location.pathname));
+        return;
+      }
+
       setFormError(data.message ?? "Unable to delete the task.");
       setIsDeleting(false);
     } catch {

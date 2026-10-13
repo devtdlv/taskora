@@ -1,6 +1,9 @@
 import Link from "next/link";
 
+import { ResendVerification } from "@/app/verify-email/resend-verification";
 import { AuthShell } from "@/components/auth-shell";
+import { needsEmailVerification } from "@/lib/email-verification-policy";
+import { RATE_LIMITS } from "@/lib/rate-limit";
 import { getCurrentUser } from "@/lib/session";
 import { getInvitationByToken } from "@/services/invitation.service";
 import { getWorkspaceMembership } from "@/services/workspace.service";
@@ -71,6 +74,35 @@ export default async function InvitePage({
         <Link href="/dashboard" className={linkButtonClass}>
           Go to dashboard
         </Link>
+      </AuthShell>
+    );
+  }
+
+  // The address isn't proven yet, so the workspace and the invitation's state
+  // stay hidden until it is. Verification happens here rather than on
+  // /verify-email so the token never has to travel in a query string.
+  if (needsEmailVerification(user)) {
+    return (
+      <AuthShell
+        title="Verify your email to join"
+        description="Open the verification link we sent you, then come back to this page to see the invitation."
+        footer={footer}
+      >
+        <div className="space-y-4">
+          <ResendVerification
+            email={user.email}
+            initialNotice={null}
+            cooldownSeconds={RATE_LIMITS.verificationResendCooldown.windowSeconds}
+          />
+
+          {/* A full reload re-runs the check above. */}
+          <a
+            href={`/invite/${token}`}
+            className="tk-btn tk-btn-secondary tk-btn-lg w-full"
+          >
+            I&apos;ve verified my email
+          </a>
+        </div>
       </AuthShell>
     );
   }

@@ -1,8 +1,7 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
 
+import { requireVerifiedUser } from "@/lib/auth-guard";
 import { getInitials } from "@/lib/initials";
-import { getCurrentUser } from "@/lib/session";
 import { getOpenTaskCounts } from "@/services/task.service";
 import { getUserWorkspaces } from "@/services/workspace.service";
 
@@ -11,11 +10,7 @@ function countLabel(count: number, singular: string, plural: string) {
 }
 
 export default async function DashboardPage() {
-  const user = await getCurrentUser();
-
-  if (!user) {
-    redirect("/login");
-  }
+  const user = await requireVerifiedUser("/dashboard");
 
   const [memberships, taskCounts] = await Promise.all([
     getUserWorkspaces(user.id),

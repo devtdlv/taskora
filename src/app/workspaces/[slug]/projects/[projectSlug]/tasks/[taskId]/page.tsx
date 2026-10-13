@@ -1,8 +1,8 @@
-import { notFound, redirect } from "next/navigation";
+import { notFound } from "next/navigation";
 
 import { Breadcrumbs } from "@/components/breadcrumbs";
 import { DueDateBadge } from "@/components/due-date-badge";
-import { getCurrentUser } from "@/lib/session";
+import { requireVerifiedUser } from "@/lib/auth-guard";
 import { toDateOnly } from "@/lib/task";
 import { getTaskComments } from "@/services/comment.service";
 import { getProjectTask } from "@/services/task.service";
@@ -18,13 +18,10 @@ export default async function TaskPage({
 }: {
   params: Promise<{ slug: string; projectSlug: string; taskId: string }>;
 }) {
-  const user = await getCurrentUser();
-
-  if (!user) {
-    redirect("/login");
-  }
-
   const { slug, projectSlug, taskId } = await params;
+  const user = await requireVerifiedUser(
+    `/workspaces/${slug}/projects/${projectSlug}/tasks/${taskId}`,
+  );
   const task = await getProjectTask(user.id, slug, projectSlug, taskId);
 
   if (!task) {

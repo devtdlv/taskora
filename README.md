@@ -80,6 +80,7 @@ Taskora is intended to run on Vercel with a managed PostgreSQL database that pro
 | `RATE_LIMIT_SECRET` | Yes | At least 32 random characters, used to hash rate-limit keys. Use a different value per environment. Without it, rate-limited actions are refused. |
 | `RESEND_API_KEY` | Yes | Resend API key. Server-side only. |
 | `EMAIL_FROM` | Yes | Sender on a domain verified in Resend, such as `Taskora <no-reply@taskora.example.com>`. The `onboarding@resend.dev` testing sender is rejected in production. |
+| `ENFORCE_EMAIL_VERIFICATION` | No | Set to `true` to require a verified email before using workspaces, projects, tasks, comments, and invitations. Off when missing or any other value. Turn it on only once verification emails reach every user. |
 
 Taskora doesn't have a verified sending domain yet, so authentication emails can't be delivered to real users until one is set up in Resend.
 
@@ -109,7 +110,7 @@ Login and signup are rate limited with a Vercel Firewall rule, configured in the
 
 Hobby projects allow one rate limit rule, which is why both endpoints share it.
 
-Email-related actions also have application-level limits stored in the `rate_limits` table, so they hold across serverless instances. Keys are HMAC-SHA-256 hashes made with `RATE_LIMIT_SECRET`, so the table never holds emails or IP addresses in a recoverable form. If the secret is missing or the table can't be reached, those actions are refused rather than allowed. Changing the secret resets every counter. Client IP addresses are only trusted on Vercel, which overwrites `X-Forwarded-For`; on other hosts the header can be forged, so only the limits keyed by email address or account apply. Expired rows are harmless but accumulate, and `deleteExpiredRateLimits()` in `src/lib/rate-limit.ts` is meant to be run from a scheduled job.
+Email-related actions also have application-level limits stored in the `rate_limits` table, so they hold across serverless instances. Keys are HMAC-SHA-256 hashes made with `RATE_LIMIT_SECRET`, so the table never holds emails or IP addresses in a recoverable form. If the secret is missing or the table can't be reached, those actions are refused rather than allowed. Changing the secret resets every counter. Client IP addresses are only trusted on Vercel, which overwrites `X-Forwarded-For`; on other hosts the header can be forged, so only the limits keyed by email address or account apply. Expired rows are harmless but accumulate, so about one in a hundred rate-limit checks deletes a batch of them after its response is sent. No scheduled job is needed.
 
 ## Development
 

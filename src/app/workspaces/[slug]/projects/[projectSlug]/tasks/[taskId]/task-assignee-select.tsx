@@ -3,6 +3,8 @@
 import { useRouter } from "next/navigation";
 import { ChangeEvent, useState, useTransition } from "react";
 
+import { verifyEmailPath } from "@/lib/verify-email-path";
+
 type AssigneeOption = {
   id: string;
   label: string;
@@ -44,6 +46,11 @@ export function TaskAssigneeSelect({
       if (!response.ok) {
         if (response.status === 401) {
           router.push("/login");
+          return;
+        }
+
+        if (data.error === "EMAIL_NOT_VERIFIED") {
+          router.push(verifyEmailPath(window.location.pathname));
           return;
         }
 

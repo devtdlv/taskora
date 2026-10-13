@@ -3,6 +3,8 @@
 import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
 
+import { verifyEmailPath } from "@/lib/verify-email-path";
+
 type FieldErrors = {
   title?: string[];
   description?: string[];
@@ -59,6 +61,11 @@ export function CreateTaskForm({
 
         if (response.status === 401) {
           router.push("/login");
+          return;
+        }
+
+        if (data.error === "EMAIL_NOT_VERIFIED") {
+          router.push(verifyEmailPath(window.location.pathname));
           return;
         }
 

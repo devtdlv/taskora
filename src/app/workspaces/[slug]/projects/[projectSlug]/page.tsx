@@ -1,8 +1,8 @@
 import Link from "next/link";
-import { notFound, redirect } from "next/navigation";
+import { notFound } from "next/navigation";
 
 import { Breadcrumbs } from "@/components/breadcrumbs";
-import { getCurrentUser } from "@/lib/session";
+import { requireVerifiedUser } from "@/lib/auth-guard";
 import { toDateOnly } from "@/lib/task";
 import { getWorkspaceProject } from "@/services/project.service";
 import { getProjectTasks } from "@/services/task.service";
@@ -14,13 +14,10 @@ export default async function ProjectPage({
 }: {
   params: Promise<{ slug: string; projectSlug: string }>;
 }) {
-  const user = await getCurrentUser();
-
-  if (!user) {
-    redirect("/login");
-  }
-
   const { slug, projectSlug } = await params;
+  const user = await requireVerifiedUser(
+    `/workspaces/${slug}/projects/${projectSlug}`,
+  );
   const project = await getWorkspaceProject(user.id, slug, projectSlug);
 
   if (!project) {

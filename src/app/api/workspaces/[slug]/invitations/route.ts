@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
+import { requireVerifiedApiUser } from "@/lib/auth-guard";
 import { invalidJsonResponse, readJsonBody } from "@/lib/request";
-import { getCurrentUser } from "@/lib/session";
 import { createInvitationSchema } from "@/lib/validations/invitation";
 import { createWorkspaceInvitation } from "@/services/invitation.service";
 import { getWorkspaceMembership } from "@/services/workspace.service";
@@ -11,17 +11,15 @@ export async function POST(
   { params }: { params: Promise<{ slug: string }> },
 ) {
   try {
-    const user = await getCurrentUser();
+    const auth = await requireVerifiedApiUser(
+      "You need to log in to invite members.",
+    );
 
-    if (!user) {
-      return NextResponse.json(
-        {
-          error: "UNAUTHORIZED",
-          message: "You need to log in to invite members.",
-        },
-        { status: 401 },
-      );
+    if (!auth.ok) {
+      return auth.response;
     }
+
+    const { user } = auth;
 
     const { slug } = await params;
     const membership = await getWorkspaceMembership(user.id, slug);

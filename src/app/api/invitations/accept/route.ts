@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
+import { requireVerifiedApiUser } from "@/lib/auth-guard";
 import { invalidJsonResponse, readJsonBody } from "@/lib/request";
-import { getCurrentUser } from "@/lib/session";
 import { acceptInvitationSchema } from "@/lib/validations/invitation";
 import { acceptWorkspaceInvitation } from "@/services/invitation.service";
 
@@ -22,21 +22,23 @@ const ERROR_RESPONSES = {
     status: 409,
     message: "This invitation has already been used.",
   },
+  EMAIL_NOT_VERIFIED: {
+    status: 403,
+    message: "Verify your email address to accept this invitation.",
+  },
 };
 
 export async function POST(request: Request) {
   try {
-    const user = await getCurrentUser();
+    const auth = await requireVerifiedApiUser(
+      "You need to log in to accept this invitation.",
+    );
 
-    if (!user) {
-      return NextResponse.json(
-        {
-          error: "UNAUTHORIZED",
-          message: "You need to log in to accept this invitation.",
-        },
-        { status: 401 },
-      );
+    if (!auth.ok) {
+      return auth.response;
     }
+
+    const { user } = auth;
 
     const body = await readJsonBody(request);
 

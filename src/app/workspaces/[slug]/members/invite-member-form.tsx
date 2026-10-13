@@ -3,6 +3,8 @@
 import { useRouter } from "next/navigation";
 import { FormEvent, useRef, useState } from "react";
 
+import { verifyEmailPath } from "@/lib/verify-email-path";
+
 type CreatedInvitation = {
   email: string;
   expiresAt: string;
@@ -59,6 +61,11 @@ export function InviteMemberForm({ workspaceSlug }: InviteMemberFormProps) {
 
         if (response.status === 401) {
           router.push("/login");
+          return;
+        }
+
+        if (data.error === "EMAIL_NOT_VERIFIED") {
+          router.push(verifyEmailPath(window.location.pathname));
           return;
         }
 

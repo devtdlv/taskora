@@ -1,9 +1,9 @@
 import Link from "next/link";
-import { notFound, redirect } from "next/navigation";
+import { notFound } from "next/navigation";
 
 import { Breadcrumbs } from "@/components/breadcrumbs";
+import { requireVerifiedUser } from "@/lib/auth-guard";
 import { getInitials } from "@/lib/initials";
-import { getCurrentUser } from "@/lib/session";
 import { getWorkspaceProjects } from "@/services/project.service";
 import { getWorkspaceMembership } from "@/services/workspace.service";
 
@@ -12,13 +12,8 @@ export default async function WorkspacePage({
 }: {
   params: Promise<{ slug: string }>;
 }) {
-  const user = await getCurrentUser();
-
-  if (!user) {
-    redirect("/login");
-  }
-
   const { slug } = await params;
+  const user = await requireVerifiedUser(`/workspaces/${slug}`);
   const membership = await getWorkspaceMembership(user.id, slug);
 
   if (!membership) {

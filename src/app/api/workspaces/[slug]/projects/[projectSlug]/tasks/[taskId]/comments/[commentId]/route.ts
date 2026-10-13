@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { getCurrentUser } from "@/lib/session";
+import { requireVerifiedApiUser } from "@/lib/auth-guard";
 import { deleteTaskComment } from "@/services/comment.service";
 
 export async function DELETE(
@@ -17,17 +17,15 @@ export async function DELETE(
   },
 ) {
   try {
-    const user = await getCurrentUser();
+    const auth = await requireVerifiedApiUser(
+      "You need to log in to delete a comment.",
+    );
 
-    if (!user) {
-      return NextResponse.json(
-        {
-          error: "UNAUTHORIZED",
-          message: "You need to log in to delete a comment.",
-        },
-        { status: 401 },
-      );
+    if (!auth.ok) {
+      return auth.response;
     }
+
+    const { user } = auth;
 
     const { slug, projectSlug, taskId, commentId } = await params;
     const deleted = await deleteTaskComment(

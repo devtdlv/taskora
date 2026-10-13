@@ -1,6 +1,8 @@
 import { createHash, randomBytes } from "node:crypto";
 
+import { needsEmailVerification } from "@/lib/email-verification-policy";
 import { prisma } from "@/lib/prisma";
+import { lockUser } from "@/services/user-lock";
 
 const INVITATION_LIFETIME_MS = 7 * 24 * 60 * 60 * 1000;
 
@@ -88,7 +90,8 @@ type AcceptInvitationResult =
         | "INVALID_INVITATION"
         | "EMAIL_MISMATCH"
         | "INVITATION_EXPIRED"
-        | "INVITATION_USED";
+        | "INVITATION_USED"
+        | "EMAIL_NOT_VERIFIED";
     };
 
 export async function acceptWorkspaceInvitation(
@@ -117,7 +120,19 @@ export async function acceptWorkspaceInvitation(
   // pending, and Postgres locks the row, so concurrent requests can't both
   // accept it. Membership is created in the same transaction, so neither
   // change can exist without the other.
-  const accepted = await prisma.$transaction(async (tx) => {
+  const outcome = await prisma.$transaction(async (tx) => {
+    // The account is read here rather than trusted from the caller, so no
+    // caller can skip verification or pass a stale email.
+    const account = await lockUser(tx, user.id);
+
+    if (!account || account.email !== invitation.email) {
+      return "mismatch";
+    }
+
+    if (needsEmailVerification(account)) {
+      return "unverified";
+    }
+
     const { count } = await tx.workspaceInvitation.updateMany({
       where: {
         id: invitation.id,
@@ -132,7 +147,7 @@ export async function acceptWorkspaceInvitation(
     });
 
     if (count === 0) {
-      return false;
+      return "not-pending";
     }
 
     await tx.workspaceMember.upsert({
@@ -150,10 +165,18 @@ export async function acceptWorkspaceInvitation(
       update: {},
     });
 
-    return true;
+    return "accepted";
   });
 
-  if (!accepted) {
+  if (outcome === "mismatch") {
+    return { ok: false, error: "EMAIL_MISMATCH" };
+  }
+
+  if (outcome === "unverified") {
+    return { ok: false, error: "EMAIL_NOT_VERIFIED" };
+  }
+
+  if (outcome === "not-pending") {
     // Already accepted, possibly by this user on an earlier or concurrent
     // request. That's only a success if they ended up as a member.
     const membership = await prisma.workspaceMember.findUnique({

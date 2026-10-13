@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
+import { requireVerifiedApiUser } from "@/lib/auth-guard";
 import { invalidJsonResponse, readJsonBody } from "@/lib/request";
-import { getCurrentUser } from "@/lib/session";
 import { createCommentSchema } from "@/lib/validations/comment";
 import { createTaskComment } from "@/services/comment.service";
 
@@ -12,17 +12,13 @@ export async function POST(
   }: { params: Promise<{ slug: string; projectSlug: string; taskId: string }> },
 ) {
   try {
-    const user = await getCurrentUser();
+    const auth = await requireVerifiedApiUser("You need to log in to comment.");
 
-    if (!user) {
-      return NextResponse.json(
-        {
-          error: "UNAUTHORIZED",
-          message: "You need to log in to comment.",
-        },
-        { status: 401 },
-      );
+    if (!auth.ok) {
+      return auth.response;
     }
+
+    const { user } = auth;
 
     const body = await readJsonBody(request);
 

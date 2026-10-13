@@ -1,16 +1,10 @@
-import { redirect } from "next/navigation";
-
 import { Breadcrumbs } from "@/components/breadcrumbs";
-import { getCurrentUser } from "@/lib/session";
+import { requireVerifiedUser } from "@/lib/auth-guard";
 
 import { CreateWorkspaceForm } from "./create-workspace-form";
 
 export default async function NewWorkspacePage() {
-  const user = await getCurrentUser();
-
-  if (!user) {
-    redirect("/login");
-  }
+  await requireVerifiedUser("/workspaces/new");
 
   return (
     <div className="max-w-2xl">

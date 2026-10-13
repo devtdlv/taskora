@@ -28,6 +28,12 @@ export function AcceptInvitationButton({ token }: AcceptInvitationButtonProps) {
       const data = await response.json();
 
       if (!response.ok) {
+        if (data.error === "EMAIL_NOT_VERIFIED") {
+          // The page shows how to verify without moving the token elsewhere.
+          router.refresh();
+          return;
+        }
+
         setError(data.message ?? "Unable to accept the invitation.");
         return;
       }

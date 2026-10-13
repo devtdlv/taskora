@@ -1,7 +1,7 @@
-import { notFound, redirect } from "next/navigation";
+import { notFound } from "next/navigation";
 
 import { Breadcrumbs } from "@/components/breadcrumbs";
-import { getCurrentUser } from "@/lib/session";
+import { requireVerifiedUser } from "@/lib/auth-guard";
 import { getWorkspaceMembership } from "@/services/workspace.service";
 
 import { CreateProjectForm } from "./create-project-form";
@@ -11,13 +11,8 @@ export default async function NewProjectPage({
 }: {
   params: Promise<{ slug: string }>;
 }) {
-  const user = await getCurrentUser();
-
-  if (!user) {
-    redirect("/login");
-  }
-
   const { slug } = await params;
+  const user = await requireVerifiedUser(`/workspaces/${slug}/projects/new`);
   const membership = await getWorkspaceMembership(user.id, slug);
 
   if (!membership) {

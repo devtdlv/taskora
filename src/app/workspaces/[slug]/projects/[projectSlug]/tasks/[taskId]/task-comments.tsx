@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { FormEvent, useState, useTransition } from "react";
 
 import { getInitials } from "@/lib/initials";
+import { verifyEmailPath } from "@/lib/verify-email-path";
 
 type Comment = {
   id: string;
@@ -59,6 +60,11 @@ export function TaskComments({ taskUrl, comments }: TaskCommentsProps) {
           return;
         }
 
+        if (data.error === "EMAIL_NOT_VERIFIED") {
+          router.push(verifyEmailPath(window.location.pathname));
+          return;
+        }
+
         setFormError(
           data.fields?.body?.[0] ??
             data.message ??
@@ -107,6 +113,12 @@ export function TaskComments({ taskUrl, comments }: TaskCommentsProps) {
       }
 
       const data = await response.json();
+
+      if (data.error === "EMAIL_NOT_VERIFIED") {
+        router.push(verifyEmailPath(window.location.pathname));
+        return;
+      }
+
       setDeleteError({
         commentId,
         message: data.message ?? "Unable to delete the comment.",
