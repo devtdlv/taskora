@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 
 // Keeps these advisory locks apart from any others the database might use.
 const PROJECT_LOCK_NAMESPACE = 7301;
+const TASK_ORDER_LOCK_NAMESPACE = 7302;
 
 type LockMode = "shared" | "exclusive";
 
@@ -61,6 +62,19 @@ export async function lockProject(
   `;
 
   return project ?? null;
+}
+
+// Writes that read and rewrite task positions take this lock, so two of them
+// in one project can't both read the same column and save conflicting
+// orders. It's only taken inside writeToActiveProject, after the shared
+// project lock, so the two locks are always taken in the same order.
+export async function lockTaskOrder(
+  tx: Prisma.TransactionClient,
+  projectId: string,
+) {
+  await tx.$queryRaw`
+    SELECT 1 FROM pg_advisory_xact_lock(${TASK_ORDER_LOCK_NAMESPACE}::int, hashtext(${projectId}))
+  `;
 }
 
 export type ProjectWriteResult<T> =

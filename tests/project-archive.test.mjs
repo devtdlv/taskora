@@ -111,7 +111,7 @@ test("the project lock is scoped by membership and re-reads the project once hel
 
 test("every task and comment mutation goes through writeToActiveProject", () => {
   const services = {
-    "task.service.ts": ["createTask", "updateTaskStatus", "updateTask", "deleteTask", "updateTaskAssignee"],
+    "task.service.ts": ["createTask", "updateTaskStatus", "moveTask", "updateTask", "deleteTask", "updateTaskAssignee"],
     "comment.service.ts": ["createTaskComment", "deleteTaskComment"],
   };
 
@@ -147,8 +147,9 @@ test("every task and comment route reports archived projects", () => {
     assert.ok(handled >= count, `${relative(SRC, file)} has ${count} handlers but reports PROJECT_ARCHIVED ${handled} times.`);
   }
 
-  // Create, status, edit, and delete a task; assign it; post and delete comments.
-  assert.equal(handlers, 7, "Expected the seven task and comment mutation handlers.");
+  // Create, status, move, edit, and delete a task; assign it; post and delete
+  // comments.
+  assert.equal(handlers, 8, "Expected the eight task and comment mutation handlers.");
 });
 
 test("project edits lock the row, refuse archived projects, and retry slug collisions", () => {

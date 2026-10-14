@@ -5,8 +5,17 @@ import type {
   CreateTaskInput,
   UpdateTaskInput,
 } from "@/lib/validations/task";
-import { writeToActiveProject } from "@/services/project-lock";
+import { lockTaskOrder, writeToActiveProject } from "@/services/project-lock";
 
+// Positions can have gaps, for example after a delete, so the order is what
+// counts, not the numbers. The tie-breakers keep it deterministic regardless.
+const COLUMN_ORDER: Prisma.TaskOrderByWithRelationInput[] = [
+  { position: "asc" },
+  { createdAt: "asc" },
+  { id: "asc" },
+];
+
+// New tasks go to the end of the To do column.
 export async function createTask(
   userId: string,
   workspaceSlug: string,
@@ -17,22 +26,32 @@ export async function createTask(
     userId,
     workspaceSlug,
     projectSlug,
-    (tx, project) =>
-      tx.task.create({
+    async (tx, project) => {
+      await lockTaskOrder(tx, project.id);
+
+      const last = await tx.task.aggregate({
+        where: { projectId: project.id, status: "TODO" },
+        _max: { position: true },
+      });
+
+      return tx.task.create({
         data: {
           projectId: project.id,
           title: input.title,
           description: input.description,
           priority: input.priority,
           dueDate: input.dueDate,
+          position: (last._max.position ?? -1) + 1,
         },
         select: {
           id: true,
           title: true,
           status: true,
           priority: true,
+          position: true,
         },
-      }),
+      });
+    },
   );
 }
 
@@ -41,9 +60,7 @@ export async function getProjectTasks(projectId: string) {
     where: {
       projectId,
     },
-    orderBy: {
-      createdAt: "asc",
-    },
+    orderBy: COLUMN_ORDER,
     select: {
       id: true,
       title: true,
@@ -156,6 +173,92 @@ export async function getProjectTask(
 // archived. Each write is then limited to that project, so a task ID from
 // another project matches nothing. A null or false value means the task is
 // missing or already gone.
+async function columnTaskIds(
+  tx: Prisma.TransactionClient,
+  projectId: string,
+  status: TaskStatus,
+) {
+  const tasks = await tx.task.findMany({
+    where: { projectId, status },
+    orderBy: COLUMN_ORDER,
+    select: { id: true },
+  });
+
+  return tasks.map((task) => task.id);
+}
+
+// Saves a column's order as positions 0, 1, 2, and so on. Only rows in this
+// project are matched, and rows already in place aren't rewritten.
+async function saveColumnOrder(
+  tx: Prisma.TransactionClient,
+  projectId: string,
+  taskIds: string[],
+) {
+  if (taskIds.length === 0) {
+    return;
+  }
+
+  await tx.$executeRaw`
+    UPDATE "tasks" t
+    SET "position" = ordered.ord - 1
+    FROM unnest(${taskIds}::text[]) WITH ORDINALITY AS ordered(id, ord)
+    WHERE t."id" = ordered.id
+      AND t."projectId" = ${projectId}
+      AND t."position" <> ordered.ord - 1
+  `;
+}
+
+// Puts a task at an index in a status column, or at the end when the index is
+// null, and renumbers the columns it left and joined. The order lock is held
+// from the first read to the last write, so moves, status changes, and new
+// tasks in the same project are applied one at a time against the current
+// order, never a stale one.
+async function placeTask(
+  tx: Prisma.TransactionClient,
+  projectId: string,
+  taskId: string,
+  status: TaskStatus,
+  index: number | null,
+) {
+  await lockTaskOrder(tx, projectId);
+
+  const task = await tx.task.findFirst({
+    where: { id: taskId, projectId },
+    select: { status: true },
+  });
+
+  if (!task) {
+    return null;
+  }
+
+  const target = (await columnTaskIds(tx, projectId, status)).filter(
+    (id) => id !== taskId,
+  );
+  const position =
+    index === null ? target.length : Math.min(index, target.length);
+
+  target.splice(position, 0, taskId);
+
+  if (task.status !== status) {
+    await tx.task.updateMany({
+      where: { id: taskId, projectId },
+      data: { status },
+    });
+
+    await saveColumnOrder(
+      tx,
+      projectId,
+      await columnTaskIds(tx, projectId, task.status),
+    );
+  }
+
+  await saveColumnOrder(tx, projectId, target);
+
+  return { id: taskId, status, position };
+}
+
+// A status change from the status select moves the task to the end of its new
+// column. Choosing the status it already has leaves it where it is.
 export async function updateTaskStatus(
   userId: string,
   workspaceSlug: string,
@@ -168,18 +271,36 @@ export async function updateTaskStatus(
     workspaceSlug,
     projectSlug,
     async (tx, project) => {
-      const result = await tx.task.updateMany({
-        where: {
-          id: taskId,
-          projectId: project.id,
-        },
-        data: {
-          status,
-        },
+      const task = await tx.task.findFirst({
+        where: { id: taskId, projectId: project.id },
+        select: { status: true },
       });
 
-      return result.count > 0 ? { id: taskId, status } : null;
+      if (task?.status === status) {
+        return { id: taskId, status };
+      }
+
+      const placed = await placeTask(tx, project.id, taskId, status, null);
+
+      return placed && { id: placed.id, status: placed.status };
     },
+  );
+}
+
+// Drag and drop: moves a task within its column or into another one.
+export async function moveTask(
+  userId: string,
+  workspaceSlug: string,
+  projectSlug: string,
+  taskId: string,
+  status: TaskStatus,
+  index: number,
+) {
+  return writeToActiveProject(
+    userId,
+    workspaceSlug,
+    projectSlug,
+    (tx, project) => placeTask(tx, project.id, taskId, status, index),
   );
 }
 
@@ -227,14 +348,31 @@ export async function deleteTask(
     workspaceSlug,
     projectSlug,
     async (tx, project) => {
-      const result = await tx.task.deleteMany({
+      await lockTaskOrder(tx, project.id);
+
+      const task = await tx.task.findFirst({
+        where: { id: taskId, projectId: project.id },
+        select: { status: true },
+      });
+
+      if (!task) {
+        return false;
+      }
+
+      await tx.task.deleteMany({
         where: {
           id: taskId,
           projectId: project.id,
         },
       });
 
-      return result.count > 0;
+      await saveColumnOrder(
+        tx,
+        project.id,
+        await columnTaskIds(tx, project.id, task.status),
+      );
+
+      return true;
     },
   );
 }

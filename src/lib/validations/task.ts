@@ -51,6 +51,16 @@ export const updateTaskStatusSchema = z.object({
   status: z.enum(TaskStatus, "Choose a valid status."),
 });
 
+// The index is the task's place in the target column once it's there,
+// counting from 0. An index past the end puts it last.
+export const moveTaskSchema = z.strictObject({
+  status: z.enum(TaskStatus, "Choose a valid status."),
+  index: z
+    .int("Choose a valid position.")
+    .min(0, "Choose a valid position.")
+    .max(10_000, "Choose a valid position."),
+});
+
 export const updateTaskAssigneeSchema = z.object({
   assigneeId: z.string().min(1, "Choose a valid assignee.").nullable(),
 });

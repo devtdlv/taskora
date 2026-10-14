@@ -160,6 +160,8 @@ model Task {
   description String?
   status      TaskStatus   @default(TODO)
   priority    TaskPriority @default(MEDIUM)
+  // Order within the task's status column, lowest first.
+  position    Int
   dueDate     DateTime?    @db.Date
   assigneeId  String?
   createdAt   DateTime     @default(now())
@@ -170,6 +172,7 @@ model Task {
   comments TaskComment[]
 
   @@index([projectId])
+  @@index([projectId, status, position])
   @@index([assigneeId])
   @@map("tasks")
 }
