@@ -94,7 +94,7 @@ test("the migration backfills positions in the existing board order", () => {
   assert.doesNotMatch(sql, /DROP|DELETE|TRUNCATE/);
 
   const schema = readFileSync(join(ROOT, "prisma", "schema.prisma"), "utf8");
-  assert.match(schema, /position\s+Int\n/);
+  assert.match(schema, /position\s+Int\r?\n/);
   assert.match(schema, /@@index\(\[projectId, status, position\]\)/);
 });
 
