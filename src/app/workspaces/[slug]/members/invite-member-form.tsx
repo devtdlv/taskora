@@ -75,6 +75,7 @@ export function InviteMemberForm({ workspaceSlug }: InviteMemberFormProps) {
 
       form.reset();
       setInvitation(data.invitation);
+      router.refresh();
     } catch {
       setFormError(
         "Something went wrong while creating the invitation. Please try again.",

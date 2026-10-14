@@ -3,6 +3,7 @@ import { createHash, randomBytes } from "node:crypto";
 import { needsEmailVerification } from "@/lib/email-verification-policy";
 import { prisma } from "@/lib/prisma";
 import { lockUser } from "@/services/user-lock";
+import { lockWorkspaceMembership } from "@/services/workspace-lock";
 
 const INVITATION_LIFETIME_MS = 7 * 24 * 60 * 60 * 1000;
 
@@ -61,6 +62,66 @@ export async function createWorkspaceInvitation(
   return { token, email, expiresAt };
 }
 
+// Never selects the token hash, so it can't reach a page or response.
+export async function getPendingWorkspaceInvitations(workspaceId: string) {
+  const invitations = await prisma.workspaceInvitation.findMany({
+    where: {
+      workspaceId,
+      acceptedAt: null,
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
+    select: {
+      id: true,
+      email: true,
+      expiresAt: true,
+    },
+  });
+  const now = new Date();
+
+  return invitations.map((invitation) => ({
+    ...invitation,
+    isExpired: invitation.expiresAt <= now,
+  }));
+}
+
+type RevokeInvitationResult =
+  | { ok: true }
+  | { ok: false; error: "NOT_FOUND" | "FORBIDDEN" | "INVITATION_NOT_FOUND" };
+
+// Revoking deletes the row, so its token hash no longer matches anything. The
+// delete only matches while the invitation is pending, and it conflicts on the
+// row with the conditional update in acceptWorkspaceInvitation: whichever
+// commits first wins, and the other sees that the row changed.
+export async function revokeWorkspaceInvitation(
+  userId: string,
+  workspaceSlug: string,
+  invitationId: string,
+) {
+  return prisma.$transaction(async (tx): Promise<RevokeInvitationResult> => {
+    const actor = await lockWorkspaceMembership(tx, userId, workspaceSlug);
+
+    if (!actor) {
+      return { ok: false, error: "NOT_FOUND" };
+    }
+
+    if (actor.role !== "OWNER") {
+      return { ok: false, error: "FORBIDDEN" };
+    }
+
+    const { count } = await tx.workspaceInvitation.deleteMany({
+      where: {
+        id: invitationId,
+        workspaceId: actor.workspaceId,
+        acceptedAt: null,
+      },
+    });
+
+    return count > 0 ? { ok: true } : { ok: false, error: "INVITATION_NOT_FOUND" };
+  });
+}
+
 export async function getInvitationByToken(token: string) {
   return prisma.workspaceInvitation.findUnique({
     where: {
@@ -117,9 +178,11 @@ export async function acceptWorkspaceInvitation(
   const workspaceId = invitation.workspace.id;
 
   // The conditional update only succeeds while the invitation is still
-  // pending, and Postgres locks the row, so concurrent requests can't both
-  // accept it. Membership is created in the same transaction, so neither
-  // change can exist without the other.
+  // pending and still has this token, and Postgres locks the row, so
+  // concurrent requests can't both accept it, and a link that was revoked or
+  // replaced while this request was running can't either. Membership is
+  // created in the same transaction, so neither change can exist without the
+  // other.
   const outcome = await prisma.$transaction(async (tx) => {
     // The account is read here rather than trusted from the caller, so no
     // caller can skip verification or pass a stale email.
@@ -136,6 +199,7 @@ export async function acceptWorkspaceInvitation(
     const { count } = await tx.workspaceInvitation.updateMany({
       where: {
         id: invitation.id,
+        tokenHash: hashToken(token),
         acceptedAt: null,
         expiresAt: {
           gt: new Date(),
@@ -192,7 +256,14 @@ export async function acceptWorkspaceInvitation(
     });
 
     if (!membership) {
-      return { ok: false, error: "INVITATION_USED" };
+      // No row with this token means the link was revoked or replaced
+      // after it was first looked up.
+      const current = await getInvitationByToken(token);
+
+      return {
+        ok: false,
+        error: current ? "INVITATION_USED" : "INVALID_INVITATION",
+      };
     }
   }
 

@@ -2,13 +2,16 @@ import { notFound } from "next/navigation";
 
 import { Breadcrumbs } from "@/components/breadcrumbs";
 import { requireVerifiedUser } from "@/lib/auth-guard";
-import { getInitials } from "@/lib/initials";
+import { getPendingWorkspaceInvitations } from "@/services/invitation.service";
 import {
   getWorkspaceMembers,
   getWorkspaceMembership,
 } from "@/services/workspace.service";
 
 import { InviteMemberForm } from "./invite-member-form";
+import { LeaveWorkspace } from "./leave-workspace";
+import { MembersList } from "./members-list";
+import { PendingInvitations } from "./pending-invitations";
 
 export default async function WorkspaceMembersPage({
   params,
@@ -24,7 +27,12 @@ export default async function WorkspaceMembersPage({
   }
 
   const { workspace, role } = membership;
-  const members = await getWorkspaceMembers(workspace.id);
+  const isOwner = role === "OWNER";
+  const [members, invitations] = await Promise.all([
+    getWorkspaceMembers(workspace.id),
+    isOwner ? getPendingWorkspaceInvitations(workspace.id) : null,
+  ]);
+  const ownerCount = members.filter((member) => member.role === "OWNER").length;
 
   return (
     <>
@@ -43,7 +51,7 @@ export default async function WorkspaceMembersPage({
         </p>
       </div>
 
-      {role === "OWNER" && (
+      {isOwner && (
         <section aria-labelledby="invite-heading" className="tk-card mt-8 p-5 sm:p-6">
           <h2 id="invite-heading" className="tk-section-title">
             Invite member
@@ -67,41 +75,48 @@ export default async function WorkspaceMembersPage({
           <span className="tk-badge">{members.length}</span>
         </div>
 
-        <ul className="tk-card mt-4 divide-y divide-zinc-200 overflow-hidden">
-          {members.map((member) => (
-            <li
-              key={member.id}
-              className="flex items-center justify-between gap-4 px-4 py-4 sm:px-5"
-            >
-              <div className="flex min-w-0 items-center gap-3">
-                <span
-                  aria-hidden="true"
-                  className="flex size-9 shrink-0 items-center justify-center rounded-full bg-zinc-100 text-xs font-semibold text-zinc-700"
-                >
-                  {getInitials(member.user.name)}
-                </span>
-
-                <div className="min-w-0">
-                  <p className="truncate text-sm font-medium text-ink">
-                    {member.user.name}
-                  </p>
-                  <p className="truncate text-sm text-zinc-500">
-                    {member.user.email}
-                  </p>
-                </div>
-              </div>
-
-              <span
-                className={`tk-badge shrink-0 ${
-                  member.role === "OWNER" ? "tk-badge-accent" : ""
-                }`}
-              >
-                {member.role === "OWNER" ? "Owner" : "Member"}
-              </span>
-            </li>
-          ))}
-        </ul>
+        <MembersList
+          workspaceSlug={workspace.slug}
+          workspaceName={workspace.name}
+          canRemove={isOwner}
+          members={members.map((member) => ({
+            id: member.id,
+            name: member.user.name || member.user.email,
+            email: member.user.email,
+            role: member.role,
+            isCurrentUser: member.userId === user.id,
+          }))}
+        />
       </section>
+
+      {invitations && (
+        <section aria-labelledby="invitations-heading" className="mt-10">
+          <div className="flex items-center gap-2">
+            <h2 id="invitations-heading" className="tk-section-title">
+              Pending invitations
+            </h2>
+            {invitations.length > 0 && (
+              <span className="tk-badge">{invitations.length}</span>
+            )}
+          </div>
+
+          <PendingInvitations
+            workspaceSlug={workspace.slug}
+            invitations={invitations.map((invitation) => ({
+              id: invitation.id,
+              email: invitation.email,
+              expiresAt: invitation.expiresAt.toISOString(),
+              isExpired: invitation.isExpired,
+            }))}
+          />
+        </section>
+      )}
+
+      <LeaveWorkspace
+        workspaceSlug={workspace.slug}
+        workspaceName={workspace.name}
+        isLastOwner={isOwner && ownerCount <= 1}
+      />
     </>
   );
 }

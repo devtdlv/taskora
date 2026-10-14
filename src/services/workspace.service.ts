@@ -4,6 +4,7 @@ import { Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
 import { pickAvailableSlug, slugify } from "@/lib/slug";
 import type { CreateWorkspaceInput } from "@/lib/validations/workspace";
+import { lockWorkspaceMembership } from "@/services/workspace-lock";
 
 const MAX_CREATE_ATTEMPTS = 3;
 
@@ -114,6 +115,7 @@ export async function getWorkspaceMembers(workspaceId: string) {
     select: {
       id: true,
       role: true,
+      userId: true,
       user: {
         select: {
           name: true,
@@ -122,6 +124,116 @@ export async function getWorkspaceMembers(workspaceId: string) {
       },
     },
   });
+}
+
+type MemberChangeResult<E extends string> = { ok: true } | { ok: false; error: E };
+
+function countOwners(tx: Prisma.TransactionClient, workspaceId: string) {
+  return tx.workspaceMember.count({
+    where: {
+      workspaceId,
+      role: "OWNER",
+    },
+  });
+}
+
+// Owners remove other people; removing yourself goes through leaveWorkspace.
+// Deleting the membership row is all it takes to revoke access, because every
+// page and route checks membership on each request. The user's account and
+// comments are kept, and tasks assigned to them become unassigned.
+export async function removeWorkspaceMember(
+  userId: string,
+  workspaceSlug: string,
+  memberId: string,
+) {
+  return prisma.$transaction(
+    async (
+      tx,
+    ): Promise<
+      MemberChangeResult<
+        | "NOT_FOUND"
+        | "FORBIDDEN"
+        | "MEMBER_NOT_FOUND"
+        | "CANNOT_REMOVE_SELF"
+        | "LAST_OWNER"
+      >
+    > => {
+      const actor = await lockWorkspaceMembership(tx, userId, workspaceSlug);
+
+      if (!actor) {
+        return { ok: false, error: "NOT_FOUND" };
+      }
+
+      if (actor.role !== "OWNER") {
+        return { ok: false, error: "FORBIDDEN" };
+      }
+
+      if (actor.id === memberId) {
+        return { ok: false, error: "CANNOT_REMOVE_SELF" };
+      }
+
+      const target = await tx.workspaceMember.findFirst({
+        where: {
+          id: memberId,
+          workspaceId: actor.workspaceId,
+        },
+        select: {
+          id: true,
+          role: true,
+        },
+      });
+
+      if (!target) {
+        return { ok: false, error: "MEMBER_NOT_FOUND" };
+      }
+
+      if (
+        target.role === "OWNER" &&
+        (await countOwners(tx, actor.workspaceId)) <= 1
+      ) {
+        return { ok: false, error: "LAST_OWNER" };
+      }
+
+      await tx.workspaceMember.delete({
+        where: {
+          id: target.id,
+        },
+      });
+
+      return { ok: true };
+    },
+  );
+}
+
+export async function leaveWorkspace(userId: string, workspaceSlug: string) {
+  return prisma.$transaction(
+    async (tx): Promise<MemberChangeResult<"NOT_FOUND" | "LAST_OWNER">> => {
+      const membership = await lockWorkspaceMembership(
+        tx,
+        userId,
+        workspaceSlug,
+      );
+
+      if (!membership) {
+        return { ok: false, error: "NOT_FOUND" };
+      }
+
+      if (
+        membership.role === "OWNER" &&
+        (await countOwners(tx, membership.workspaceId)) <= 1
+      ) {
+        return { ok: false, error: "LAST_OWNER" };
+      }
+
+      await tx.workspaceMember.delete({
+        where: {
+          id: membership.id,
+        },
+      });
+
+      return { ok: true };
+    },
+  );
 }
 
 // Returns null both when the workspace doesn't exist and when the user isn't
