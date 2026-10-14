@@ -115,3 +115,16 @@ Email-related actions also have application-level limits stored in the `rate_lim
 ## Development
 
 See [`docs/PROJECT_SPEC.md`](docs/PROJECT_SPEC.md) for the product and technical specification.
+
+### Testing
+
+Tests use Node's built-in test runner. `tests/support/register.mjs` lets them import the app's TypeScript directly, and blocks network access so no email is ever sent.
+
+```bash
+npm test          # validation, security helpers, and source checks; no database
+npm run test:db   # services against a separate PostgreSQL test database
+```
+
+`npm run test:db` needs `TEST_DATABASE_URL`, pointing at a database whose name ends in `_test`, such as `postgresql://USER:PASSWORD@localhost:5432/taskora_test`. It refuses to run if that is the database in `DATABASE_URL` or `DIRECT_URL`. Before the tests, it applies migrations with `prisma migrate deploy` and empties that database, so never point it at data you want to keep.
+
+GitHub Actions runs `npm test`, `npm run test:db`, `npm run lint`, `npx tsc --noEmit`, and `npm run build` on every push and pull request to `main`, against a throwaway PostgreSQL service. It uses placeholder values only and needs no secrets.
