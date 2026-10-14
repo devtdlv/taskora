@@ -1,7 +1,11 @@
 import { NextResponse } from "next/server";
 
 import { requireVerifiedApiUser } from "@/lib/auth-guard";
-import { invalidJsonResponse, readJsonBody } from "@/lib/request";
+import {
+  invalidJsonResponse,
+  readJsonBody,
+  rejectUntrustedMutation,
+} from "@/lib/request";
 import { updateTaskAssigneeSchema } from "@/lib/validations/task";
 import { updateTaskAssignee } from "@/services/task.service";
 
@@ -12,6 +16,12 @@ export async function PUT(
   }: { params: Promise<{ slug: string; projectSlug: string; taskId: string }> },
 ) {
   try {
+    const rejected = rejectUntrustedMutation(request, { jsonBody: true });
+
+    if (rejected) {
+      return rejected;
+    }
+
     const auth = await requireVerifiedApiUser(
       "You need to log in to update a task.",
     );

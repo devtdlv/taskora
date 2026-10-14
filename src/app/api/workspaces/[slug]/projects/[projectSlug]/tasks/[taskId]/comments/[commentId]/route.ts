@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
 
 import { requireVerifiedApiUser } from "@/lib/auth-guard";
+import { rejectUntrustedMutation } from "@/lib/request";
 import { deleteTaskComment } from "@/services/comment.service";
 
 export async function DELETE(
-  _request: Request,
+  request: Request,
   {
     params,
   }: {
@@ -17,6 +18,12 @@ export async function DELETE(
   },
 ) {
   try {
+    const rejected = rejectUntrustedMutation(request, { jsonBody: false });
+
+    if (rejected) {
+      return rejected;
+    }
+
     const auth = await requireVerifiedApiUser(
       "You need to log in to delete a comment.",
     );

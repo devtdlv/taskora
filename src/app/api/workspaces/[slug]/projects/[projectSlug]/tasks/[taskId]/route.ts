@@ -1,7 +1,11 @@
 import { NextResponse } from "next/server";
 
 import { requireVerifiedApiUser } from "@/lib/auth-guard";
-import { invalidJsonResponse, readJsonBody } from "@/lib/request";
+import {
+  invalidJsonResponse,
+  readJsonBody,
+  rejectUntrustedMutation,
+} from "@/lib/request";
 import {
   updateTaskSchema,
   updateTaskStatusSchema,
@@ -18,6 +22,12 @@ type TaskRouteContext = {
 
 export async function PATCH(request: Request, { params }: TaskRouteContext) {
   try {
+    const rejected = rejectUntrustedMutation(request, { jsonBody: true });
+
+    if (rejected) {
+      return rejected;
+    }
+
     const auth = await requireVerifiedApiUser(
       "You need to log in to update a task.",
     );
@@ -81,6 +91,12 @@ export async function PATCH(request: Request, { params }: TaskRouteContext) {
 
 export async function PUT(request: Request, { params }: TaskRouteContext) {
   try {
+    const rejected = rejectUntrustedMutation(request, { jsonBody: true });
+
+    if (rejected) {
+      return rejected;
+    }
+
     const auth = await requireVerifiedApiUser(
       "You need to log in to update a task.",
     );
@@ -142,8 +158,14 @@ export async function PUT(request: Request, { params }: TaskRouteContext) {
   }
 }
 
-export async function DELETE(_request: Request, { params }: TaskRouteContext) {
+export async function DELETE(request: Request, { params }: TaskRouteContext) {
   try {
+    const rejected = rejectUntrustedMutation(request, { jsonBody: false });
+
+    if (rejected) {
+      return rejected;
+    }
+
     const auth = await requireVerifiedApiUser(
       "You need to log in to delete a task.",
     );

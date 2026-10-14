@@ -104,6 +104,57 @@ test("protected API handlers use requireVerifiedApiUser", () => {
   assert.ok(handlers >= 11, `Expected at least 11 protected handlers, found ${handlers}.`);
 });
 
+test("protected mutating handlers check origin and content type first", () => {
+  const protectedRoutes = apiRoutes.filter(
+    (f) => !`${routeOf(f)}/`.startsWith(PUBLIC_API_PREFIX),
+  );
+  let mutations = 0;
+
+  for (const file of protectedRoutes) {
+    const source = readFileSync(file, "utf8");
+    const starts = [...source.matchAll(HANDLER)];
+
+    starts.forEach((match, i) => {
+      if (match[1] === "GET") {
+        return;
+      }
+
+      const body = source.slice(match.index, starts[i + 1]?.index);
+      const name = `${match[1]} ${relative(APP_DIR, file)}`;
+      const check = body.indexOf("rejectUntrustedMutation(request");
+      const readsJson = body.includes("readJsonBody(");
+
+      mutations += 1;
+
+      assert.ok(check !== -1, `${name} must call rejectUntrustedMutation(request, ...).`);
+      assert.ok(
+        check < body.indexOf("requireVerifiedApiUser("),
+        `${name} must check the request before loading the session.`,
+      );
+      assert.match(
+        body,
+        readsJson ? /jsonBody: true/ : /jsonBody: false/,
+        `${name} ${readsJson ? "reads" : "does not read"} a JSON body and must say so.`,
+      );
+    });
+  }
+
+  assert.ok(mutations >= 11, `Expected at least 11 mutating handlers, found ${mutations}.`);
+});
+
+test("client calls with a JSON body declare application/json", () => {
+  for (const file of files.filter((f) => f.endsWith(".tsx"))) {
+    const source = readFileSync(file, "utf8");
+    const bodies = [...source.matchAll(/body: JSON\.stringify\(/g)].length;
+    const headers = [...source.matchAll(/"Content-Type": "application\/json"/g)].length;
+
+    assert.ok(
+      headers >= bodies,
+      `${relative(APP_DIR, file)} sends ${bodies} JSON bodies but declares application/json ${headers} times.`,
+    );
+  }
+});
+
 test("invitation acceptance checks verification in the service", () => {
   const source = readFileSync(
     join(APP_DIR, "..", "services", "invitation.service.ts"),

@@ -10,8 +10,9 @@ export function isTrustedOrigin(request: Request) {
   const origin = request.headers.get("origin");
 
   // Non-browser clients such as curl don't send Origin and can't be used to
-  // forge a request from someone else's browser.
-  if (!origin) {
+  // forge a request from someone else's browser. Only a missing header counts
+  // as absent; an empty or malformed value is compared like any other.
+  if (origin === null) {
     return true;
   }
 
