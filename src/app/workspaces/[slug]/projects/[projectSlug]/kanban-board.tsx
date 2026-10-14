@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 
 import { DueDateBadge } from "@/components/due-date-badge";
-import type { TaskStatus } from "@/generated/prisma/enums";
+import { PriorityBadge } from "@/components/priority-badge";
+import type { TaskPriority, TaskStatus } from "@/generated/prisma/enums";
 import { getInitials } from "@/lib/initials";
 import { TASK_STATUS_LABELS } from "@/lib/task";
 import { verifyEmailPath } from "@/lib/verify-email-path";
@@ -14,6 +15,7 @@ type BoardTask = {
   id: string;
   title: string;
   status: TaskStatus;
+  priority: TaskPriority;
   // A YYYY-MM-DD calendar date.
   dueDate: string | null;
   assigneeName: string | null;
@@ -178,9 +180,12 @@ export function KanbanBoard({
                           )}
                         </span>
 
-                        {task.dueDate && (
-                          <DueDateBadge dueDate={task.dueDate} isDone={isDone} />
-                        )}
+                        <span className="flex flex-wrap items-center gap-1.5">
+                          <PriorityBadge priority={task.priority} />
+                          {task.dueDate && (
+                            <DueDateBadge dueDate={task.dueDate} isDone={isDone} />
+                          )}
+                        </span>
                       </div>
 
                       {!readOnly && (

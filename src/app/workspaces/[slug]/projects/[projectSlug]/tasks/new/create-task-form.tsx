@@ -3,11 +3,13 @@
 import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
 
+import { TASK_PRIORITIES, TASK_PRIORITY_LABELS } from "@/lib/task";
 import { verifyEmailPath } from "@/lib/verify-email-path";
 
 type FieldErrors = {
   title?: string[];
   description?: string[];
+  priority?: string[];
   dueDate?: string[];
 };
 
@@ -39,6 +41,7 @@ export function CreateTaskForm({
     const payload = {
       title: formData.get("title"),
       description: formData.get("description"),
+      priority: formData.get("priority"),
       dueDate: formData.get("dueDate"),
     };
 
@@ -135,6 +138,33 @@ export function CreateTaskForm({
         {fieldErrors.description?.[0] && (
           <p id="description-error" className="tk-field-error">
             {fieldErrors.description[0]}
+          </p>
+        )}
+      </div>
+
+      <div>
+        <label htmlFor="priority" className="tk-label">
+          Priority
+        </label>
+
+        <select
+          id="priority"
+          name="priority"
+          defaultValue="MEDIUM"
+          aria-invalid={Boolean(fieldErrors.priority)}
+          aria-describedby={fieldErrors.priority ? "priority-error" : undefined}
+          className="tk-input mt-2"
+        >
+          {TASK_PRIORITIES.map((option) => (
+            <option key={option} value={option}>
+              {TASK_PRIORITY_LABELS[option]}
+            </option>
+          ))}
+        </select>
+
+        {fieldErrors.priority?.[0] && (
+          <p id="priority-error" className="tk-field-error">
+            {fieldErrors.priority[0]}
           </p>
         )}
       </div>

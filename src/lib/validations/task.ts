@@ -1,6 +1,8 @@
 import { z } from "zod";
 
-import { TaskStatus } from "@/generated/prisma/enums";
+import { TaskPriority, TaskStatus } from "@/generated/prisma/enums";
+
+const priority = z.enum(TaskPriority, "Choose a valid priority.");
 
 const taskDetailsShape = {
   title: z
@@ -27,14 +29,21 @@ const taskDetailsShape = {
     .transform((dueDate) => (dueDate ? new Date(dueDate) : null)),
 };
 
-export const createTaskSchema = z.object(taskDetailsShape);
+export const createTaskSchema = z.object({
+  ...taskDetailsShape,
+  priority: priority.default("MEDIUM"),
+});
 
 export type CreateTaskInput = z.infer<typeof createTaskSchema>;
 
 // Strict so a request that includes status, assigneeId, or internal fields is
 // rejected instead of having those fields silently dropped. A missing
-// description or due date clears it, because the form always sends all three.
-export const updateTaskSchema = z.strictObject(taskDetailsShape);
+// description or due date clears it, because the form always sends them. A
+// missing priority leaves the current one in place.
+export const updateTaskSchema = z.strictObject({
+  ...taskDetailsShape,
+  priority: priority.optional(),
+});
 
 export type UpdateTaskInput = z.infer<typeof updateTaskSchema>;
 

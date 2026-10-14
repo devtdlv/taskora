@@ -23,12 +23,14 @@ export async function createTask(
           projectId: project.id,
           title: input.title,
           description: input.description,
+          priority: input.priority,
           dueDate: input.dueDate,
         },
         select: {
           id: true,
           title: true,
           status: true,
+          priority: true,
         },
       }),
   );
@@ -46,6 +48,7 @@ export async function getProjectTasks(projectId: string) {
       id: true,
       title: true,
       status: true,
+      priority: true,
       dueDate: true,
       assignee: {
         select: {
@@ -127,6 +130,7 @@ export async function getProjectTask(
       title: true,
       description: true,
       status: true,
+      priority: true,
       dueDate: true,
       assigneeId: true,
       project: {
@@ -179,8 +183,8 @@ export async function updateTaskStatus(
   );
 }
 
-// Only title, description, and due date are written, so status and assignee
-// are left as they are.
+// Only title, description, priority, and due date are written, so status and
+// assignee are left as they are. An undefined priority leaves it unchanged.
 export async function updateTask(
   userId: string,
   workspaceSlug: string,
@@ -201,6 +205,7 @@ export async function updateTask(
         data: {
           title: input.title,
           description: input.description,
+          priority: input.priority,
           dueDate: input.dueDate,
         },
       });

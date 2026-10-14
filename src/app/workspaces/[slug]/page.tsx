@@ -146,9 +146,9 @@ export default async function WorkspacePage({
               >
                 &#9656;
               </span>
-              <h2 id="archived-heading" className="tk-section-title">
+              <span id="archived-heading" className="tk-section-title">
                 Archived projects
-              </h2>
+              </span>
               <span className="tk-badge">{archivedProjects.length}</span>
             </summary>
 

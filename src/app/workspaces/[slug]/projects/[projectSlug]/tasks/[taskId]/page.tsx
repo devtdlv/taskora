@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 
 import { Breadcrumbs } from "@/components/breadcrumbs";
 import { DueDateBadge } from "@/components/due-date-badge";
+import { PriorityBadge } from "@/components/priority-badge";
 import { requireVerifiedUser } from "@/lib/auth-guard";
 import { toDateOnly } from "@/lib/task";
 import { getTaskComments } from "@/services/comment.service";
@@ -69,6 +70,7 @@ export default async function TaskPage({
             projectHref={projectHref}
             title={task.title}
             description={task.description}
+            priority={task.priority}
             dueDate={dueDateValue}
             readOnly={readOnly}
           />
@@ -101,6 +103,13 @@ export default async function TaskPage({
                 label: member.user.name || member.user.email,
               }))}
             />
+
+            <div>
+              <p className="tk-label">Priority</p>
+              <div className="mt-2">
+                <PriorityBadge priority={task.priority} />
+              </div>
+            </div>
 
             <div>
               <p className="tk-label">Due date</p>

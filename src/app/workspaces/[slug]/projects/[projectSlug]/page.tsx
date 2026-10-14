@@ -90,6 +90,7 @@ export default async function ProjectPage({
               id: task.id,
               title: task.title,
               status: task.status,
+              priority: task.priority,
               dueDate: task.dueDate ? toDateOnly(task.dueDate) : null,
               assigneeName: task.assignee
                 ? task.assignee.user.name || task.assignee.user.email
