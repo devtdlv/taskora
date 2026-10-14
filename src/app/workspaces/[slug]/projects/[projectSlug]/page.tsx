@@ -8,6 +8,7 @@ import { getWorkspaceProject } from "@/services/project.service";
 import { getProjectTasks } from "@/services/task.service";
 
 import { KanbanBoard } from "./kanban-board";
+import { ProjectHeader } from "./project-header";
 
 export default async function ProjectPage({
   params,
@@ -27,6 +28,7 @@ export default async function ProjectPage({
   const { workspace } = project;
   const tasks = await getProjectTasks(project.id);
   const projectHref = `/workspaces/${workspace.slug}/projects/${project.slug}`;
+  const isArchived = project.archivedAt !== null;
 
   return (
     <>
@@ -38,26 +40,14 @@ export default async function ProjectPage({
         ]}
       />
 
-      <div className="tk-page-header mt-4">
-        <div className="min-w-0">
-          <h1 className="tk-page-title break-words">{project.name}</h1>
-
-          {project.description && (
-            <p className="tk-page-description whitespace-pre-line">
-              {project.description}
-            </p>
-          )}
-        </div>
-
-        {tasks.length > 0 && (
-          <Link
-            href={`${projectHref}/tasks/new`}
-            className="tk-btn tk-btn-primary w-full sm:w-auto"
-          >
-            Create task
-          </Link>
-        )}
-      </div>
+      <ProjectHeader
+        workspaceSlug={workspace.slug}
+        projectSlug={project.slug}
+        name={project.name}
+        description={project.description}
+        archivedAt={project.archivedAt?.toISOString() ?? null}
+        showCreateTask={tasks.length > 0}
+      />
 
       <section aria-labelledby="tasks-heading" className="mt-10">
         <div className="flex items-center gap-2">
@@ -71,21 +61,31 @@ export default async function ProjectPage({
           <div className="tk-empty mt-4">
             <h3 className="tk-section-title">No tasks yet</h3>
 
-            <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-zinc-600">
-              Break this project into tasks so everyone knows what needs to
-              happen next.
-            </p>
+            {isArchived ? (
+              <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-zinc-600">
+                This project was archived without any tasks. Restore it to
+                start adding some.
+              </p>
+            ) : (
+              <>
+                <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-zinc-600">
+                  Break this project into tasks so everyone knows what needs
+                  to happen next.
+                </p>
 
-            <Link
-              href={`${projectHref}/tasks/new`}
-              className="tk-btn tk-btn-primary mt-6"
-            >
-              Create task
-            </Link>
+                <Link
+                  href={`${projectHref}/tasks/new`}
+                  className="tk-btn tk-btn-primary mt-6"
+                >
+                  Create task
+                </Link>
+              </>
+            )}
           </div>
         ) : (
           <KanbanBoard
             projectHref={projectHref}
+            readOnly={isArchived}
             tasks={tasks.map((task) => ({
               id: task.id,
               title: task.title,

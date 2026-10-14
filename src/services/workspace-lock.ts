@@ -1,7 +1,7 @@
 import type { Prisma } from "@/generated/prisma/client";
 
-// Removing members, leaving, and revoking invitations lock the workspace row
-// first, so those changes run one at a time per workspace. That's what makes a
+// Removing members, leaving, revoking invitations, and renaming lock the
+// workspace row first, so those changes run one at a time per workspace. That's what makes a
 // last-owner check and the delete after it a single step: two owners leaving
 // at once can't both see the other one still there. NO KEY UPDATE doesn't
 // conflict with the key-share lock that inserts referencing the workspace

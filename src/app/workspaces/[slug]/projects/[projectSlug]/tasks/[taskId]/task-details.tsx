@@ -17,6 +17,7 @@ type TaskDetailsProps = {
   title: string;
   description: string | null;
   dueDate: string | null;
+  readOnly: boolean;
 };
 
 export function TaskDetails({
@@ -25,6 +26,7 @@ export function TaskDetails({
   title,
   description,
   dueDate,
+  readOnly,
 }: TaskDetailsProps) {
   const router = useRouter();
   const [isRefreshing, startTransition] = useTransition();
@@ -137,7 +139,7 @@ export function TaskDetails({
     }
   }
 
-  if (isEditing) {
+  if (isEditing && !readOnly) {
     const isBusy = isSaving || isRefreshing;
 
     return (
@@ -247,25 +249,27 @@ export function TaskDetails({
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <h1 className="tk-page-title min-w-0 break-words">{title}</h1>
 
-        <div className="flex shrink-0 items-center gap-1">
-          <button
-            type="button"
-            onClick={startEditing}
-            disabled={isDeleting}
-            className="tk-btn tk-btn-secondary tk-btn-sm"
-          >
-            Edit task
-          </button>
+        {!readOnly && (
+          <div className="flex shrink-0 items-center gap-1">
+            <button
+              type="button"
+              onClick={startEditing}
+              disabled={isDeleting}
+              className="tk-btn tk-btn-secondary tk-btn-sm"
+            >
+              Edit task
+            </button>
 
-          <button
-            type="button"
-            onClick={handleDelete}
-            disabled={isDeleting}
-            className="tk-btn tk-btn-sm text-red-700 hover:bg-red-50"
-          >
-            {isDeleting ? "Deleting..." : "Delete task"}
-          </button>
-        </div>
+            <button
+              type="button"
+              onClick={handleDelete}
+              disabled={isDeleting}
+              className="tk-btn tk-btn-sm text-red-700 hover:bg-red-50"
+            >
+              {isDeleting ? "Deleting..." : "Delete task"}
+            </button>
+          </div>
+        )}
       </div>
 
       {formError && (
@@ -288,7 +292,9 @@ export function TaskDetails({
           </p>
         ) : (
           <p className="mt-2 text-sm text-zinc-500">
-            No description yet. Use Edit task to add one.
+            {readOnly
+              ? "No description."
+              : "No description yet. Use Edit task to add one."}
           </p>
         )}
       </section>

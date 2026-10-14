@@ -14,12 +14,14 @@ type TaskAssigneeSelectProps = {
   taskUrl: string;
   assigneeId: string | null;
   members: AssigneeOption[];
+  readOnly: boolean;
 };
 
 export function TaskAssigneeSelect({
   taskUrl,
   assigneeId,
   members,
+  readOnly,
 }: TaskAssigneeSelectProps) {
   const router = useRouter();
   const [isRefreshing, startTransition] = useTransition();
@@ -79,7 +81,7 @@ export function TaskAssigneeSelect({
         id="assignee"
         value={pendingValue ?? assigneeId ?? ""}
         onChange={handleChange}
-        disabled={pendingValue !== null || isRefreshing}
+        disabled={pendingValue !== null || isRefreshing || readOnly}
         aria-describedby={error ? "assignee-error" : undefined}
         className="tk-input mt-2"
       >

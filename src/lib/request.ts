@@ -57,6 +57,16 @@ export function invalidJsonResponse() {
   );
 }
 
+export function projectArchivedResponse() {
+  return NextResponse.json(
+    {
+      error: "PROJECT_ARCHIVED",
+      message: "This project is archived. Restore it to make changes.",
+    },
+    { status: 409 },
+  );
+}
+
 export function rateLimitedResponse(
   result: Extract<RateLimitResult, { allowed: false }>,
 ) {

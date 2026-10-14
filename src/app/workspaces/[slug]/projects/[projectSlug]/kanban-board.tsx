@@ -22,6 +22,8 @@ type BoardTask = {
 type KanbanBoardProps = {
   projectHref: string;
   tasks: BoardTask[];
+  // Archived projects show the board without the status controls.
+  readOnly: boolean;
 };
 
 const COLUMNS: TaskStatus[] = ["TODO", "IN_PROGRESS", "DONE"];
@@ -32,7 +34,11 @@ const COLUMN_DOT_CLASSES: Record<TaskStatus, string> = {
   DONE: "bg-emerald-500",
 };
 
-export function KanbanBoard({ projectHref, tasks }: KanbanBoardProps) {
+export function KanbanBoard({
+  projectHref,
+  tasks,
+  readOnly,
+}: KanbanBoardProps) {
   const router = useRouter();
   const [isRefreshing, startTransition] = useTransition();
   const [updating, setUpdating] = useState<{
@@ -177,31 +183,33 @@ export function KanbanBoard({ projectHref, tasks }: KanbanBoardProps) {
                         )}
                       </div>
 
-                      <select
-                        aria-label={`Status for ${task.title}`}
-                        value={
-                          updating?.taskId === task.id
-                            ? updating.status
-                            : task.status
-                        }
-                        onChange={(event) =>
-                          handleStatusChange(
-                            task.id,
-                            event.target.value as TaskStatus,
-                          )
-                        }
-                        disabled={isBusy}
-                        aria-describedby={
-                          hasError ? `status-error-${task.id}` : undefined
-                        }
-                        className="tk-input tk-input-sm relative z-10 mt-3 h-10 cursor-pointer bg-zinc-50 text-sm font-medium text-zinc-700 shadow-none hover:bg-white md:h-8 md:text-xs"
-                      >
-                        {COLUMNS.map((status) => (
-                          <option key={status} value={status}>
-                            {TASK_STATUS_LABELS[status]}
-                          </option>
-                        ))}
-                      </select>
+                      {!readOnly && (
+                        <select
+                          aria-label={`Status for ${task.title}`}
+                          value={
+                            updating?.taskId === task.id
+                              ? updating.status
+                              : task.status
+                          }
+                          onChange={(event) =>
+                            handleStatusChange(
+                              task.id,
+                              event.target.value as TaskStatus,
+                            )
+                          }
+                          disabled={isBusy}
+                          aria-describedby={
+                            hasError ? `status-error-${task.id}` : undefined
+                          }
+                          className="tk-input tk-input-sm relative z-10 mt-3 h-10 cursor-pointer bg-zinc-50 text-sm font-medium text-zinc-700 shadow-none hover:bg-white md:h-8 md:text-xs"
+                        >
+                          {COLUMNS.map((status) => (
+                            <option key={status} value={status}>
+                              {TASK_STATUS_LABELS[status]}
+                            </option>
+                          ))}
+                        </select>
+                      )}
 
                       {hasError && (
                         <p

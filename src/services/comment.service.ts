@@ -1,5 +1,5 @@
-import { Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
+import { writeToActiveProject } from "@/services/project-lock";
 
 export async function getTaskComments(taskId: string) {
   return prisma.taskComment.findMany({
@@ -22,10 +22,9 @@ export async function getTaskComments(taskId: string) {
   });
 }
 
-// The task is connected through the same project, workspace, and membership
-// filter used for task reads, so the access check and the insert happen in one
-// write. If the task is missing or inaccessible, Prisma throws P2025 and
-// nothing is created.
+// writeToActiveProject has already matched the project through the user's
+// membership and confirmed it isn't archived, so the task only has to belong
+// to that project. A null value means the task is missing or inaccessible.
 export async function createTaskComment(
   userId: string,
   workspaceSlug: string,
@@ -33,53 +32,42 @@ export async function createTaskComment(
   taskId: string,
   body: string,
 ) {
-  try {
-    return await prisma.taskComment.create({
-      data: {
-        body,
-        author: {
-          connect: {
-            id: userId,
-          },
-        },
-        task: {
-          connect: {
-            id: taskId,
-            project: {
-              slug: projectSlug,
-              workspace: {
-                slug: workspaceSlug,
-                members: {
-                  some: {
-                    userId,
-                  },
-                },
-              },
-            },
-          },
-        },
-      },
-      select: {
-        id: true,
-        body: true,
-        createdAt: true,
-      },
-    });
-  } catch (error) {
-    if (
-      error instanceof Prisma.PrismaClientKnownRequestError &&
-      error.code === "P2025"
-    ) {
-      return null;
-    }
+  return writeToActiveProject(
+    userId,
+    workspaceSlug,
+    projectSlug,
+    async (tx, project) => {
+      // The key-share lock makes a concurrent task delete wait until the
+      // comment is in, instead of the insert failing its foreign key.
+      const [task] = await tx.$queryRaw<{ id: string }[]>`
+        SELECT "id" FROM "tasks"
+        WHERE "id" = ${taskId} AND "projectId" = ${project.id}
+        FOR KEY SHARE
+      `;
 
-    throw error;
-  }
+      if (!task) {
+        return null;
+      }
+
+      return tx.taskComment.create({
+        data: {
+          body,
+          taskId: task.id,
+          authorId: userId,
+        },
+        select: {
+          id: true,
+          body: true,
+          createdAt: true,
+        },
+      });
+    },
+  );
 }
 
 // Only the author can delete a comment, and only while they still have access
-// to the task's workspace. A count of 0 covers missing, inaccessible, other
-// people's, and already-deleted comments alike.
+// to the task's workspace and the project is active. A false value covers
+// missing, other people's, and already-deleted comments alike.
 export async function deleteTaskComment(
   userId: string,
   workspaceSlug: string,
@@ -87,26 +75,23 @@ export async function deleteTaskComment(
   taskId: string,
   commentId: string,
 ) {
-  const result = await prisma.taskComment.deleteMany({
-    where: {
-      id: commentId,
-      authorId: userId,
-      task: {
-        id: taskId,
-        project: {
-          slug: projectSlug,
-          workspace: {
-            slug: workspaceSlug,
-            members: {
-              some: {
-                userId,
-              },
-            },
+  return writeToActiveProject(
+    userId,
+    workspaceSlug,
+    projectSlug,
+    async (tx, project) => {
+      const result = await tx.taskComment.deleteMany({
+        where: {
+          id: commentId,
+          authorId: userId,
+          task: {
+            id: taskId,
+            projectId: project.id,
           },
         },
-      },
-    },
-  });
+      });
 
-  return result.count > 0;
+      return result.count > 0;
+    },
+  );
 }

@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { requireVerifiedApiUser } from "@/lib/auth-guard";
 import {
   invalidJsonResponse,
+  projectArchivedResponse,
   readJsonBody,
   rejectUntrustedMutation,
 } from "@/lib/request";
@@ -19,6 +20,16 @@ import {
 type TaskRouteContext = {
   params: Promise<{ slug: string; projectSlug: string; taskId: string }>;
 };
+
+function taskNotFoundResponse() {
+  return NextResponse.json(
+    {
+      error: "NOT_FOUND",
+      message: "Task not found.",
+    },
+    { status: 404 },
+  );
+}
 
 export async function PATCH(request: Request, { params }: TaskRouteContext) {
   try {
@@ -57,7 +68,7 @@ export async function PATCH(request: Request, { params }: TaskRouteContext) {
     }
 
     const { slug, projectSlug, taskId } = await params;
-    const task = await updateTaskStatus(
+    const update = await updateTaskStatus(
       user.id,
       slug,
       projectSlug,
@@ -65,17 +76,15 @@ export async function PATCH(request: Request, { params }: TaskRouteContext) {
       result.data.status,
     );
 
-    if (!task) {
-      return NextResponse.json(
-        {
-          error: "NOT_FOUND",
-          message: "Task not found.",
-        },
-        { status: 404 },
-      );
+    if (!update.ok && update.error === "PROJECT_ARCHIVED") {
+      return projectArchivedResponse();
     }
 
-    return NextResponse.json({ task });
+    if (!update.ok || !update.value) {
+      return taskNotFoundResponse();
+    }
+
+    return NextResponse.json({ task: update.value });
   } catch (error) {
     console.error("Task status update failed:", error);
 
@@ -126,7 +135,7 @@ export async function PUT(request: Request, { params }: TaskRouteContext) {
     }
 
     const { slug, projectSlug, taskId } = await params;
-    const task = await updateTask(
+    const update = await updateTask(
       user.id,
       slug,
       projectSlug,
@@ -134,17 +143,15 @@ export async function PUT(request: Request, { params }: TaskRouteContext) {
       result.data,
     );
 
-    if (!task) {
-      return NextResponse.json(
-        {
-          error: "NOT_FOUND",
-          message: "Task not found.",
-        },
-        { status: 404 },
-      );
+    if (!update.ok && update.error === "PROJECT_ARCHIVED") {
+      return projectArchivedResponse();
     }
 
-    return NextResponse.json({ task });
+    if (!update.ok || !update.value) {
+      return taskNotFoundResponse();
+    }
+
+    return NextResponse.json({ task: update.value });
   } catch (error) {
     console.error("Task update failed:", error);
 
@@ -179,14 +186,12 @@ export async function DELETE(request: Request, { params }: TaskRouteContext) {
     const { slug, projectSlug, taskId } = await params;
     const deleted = await deleteTask(user.id, slug, projectSlug, taskId);
 
-    if (!deleted) {
-      return NextResponse.json(
-        {
-          error: "NOT_FOUND",
-          message: "Task not found.",
-        },
-        { status: 404 },
-      );
+    if (!deleted.ok && deleted.error === "PROJECT_ARCHIVED") {
+      return projectArchivedResponse();
+    }
+
+    if (!deleted.ok || !deleted.value) {
+      return taskNotFoundResponse();
     }
 
     return new NextResponse(null, { status: 204 });

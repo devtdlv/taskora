@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { requireVerifiedApiUser } from "@/lib/auth-guard";
 import {
   invalidJsonResponse,
+  projectArchivedResponse,
   readJsonBody,
   rejectUntrustedMutation,
 } from "@/lib/request";
@@ -58,6 +59,10 @@ export async function PUT(
       taskId,
       result.data.assigneeId,
     );
+
+    if (!update.ok && update.error === "PROJECT_ARCHIVED") {
+      return projectArchivedResponse();
+    }
 
     if (!update.ok && update.error === "NOT_FOUND") {
       return NextResponse.json(

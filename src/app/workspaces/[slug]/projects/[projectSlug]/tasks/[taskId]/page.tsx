@@ -39,6 +39,7 @@ export default async function TaskPage({
 
   // YYYY-MM-DD, the form both the date input and the due-date badge expect.
   const dueDateValue = task.dueDate ? toDateOnly(task.dueDate) : null;
+  const readOnly = project.archivedAt !== null;
 
   return (
     <>
@@ -51,6 +52,13 @@ export default async function TaskPage({
         ]}
       />
 
+      {readOnly && (
+        <div role="status" className="tk-alert-warning mt-4">
+          <span className="font-semibold">Archived project.</span> This task
+          is read-only until the project is restored.
+        </div>
+      )}
+
       {/* On small screens the properties panel sits between the task and its
           comments. From md up it moves to a sticky right column that spans
           both, and the 1fr second row absorbs its extra height. */}
@@ -62,6 +70,7 @@ export default async function TaskPage({
             title={task.title}
             description={task.description}
             dueDate={dueDateValue}
+            readOnly={readOnly}
           />
         </div>
 
@@ -77,11 +86,16 @@ export default async function TaskPage({
           </h2>
 
           <div className="space-y-5 p-5">
-            <TaskStatusSelect taskUrl={taskUrl} initialStatus={task.status} />
+            <TaskStatusSelect
+              taskUrl={taskUrl}
+              initialStatus={task.status}
+              readOnly={readOnly}
+            />
 
             <TaskAssigneeSelect
               taskUrl={taskUrl}
               assigneeId={task.assigneeId}
+              readOnly={readOnly}
               members={members.map((member) => ({
                 id: member.id,
                 label: member.user.name || member.user.email,
@@ -107,6 +121,7 @@ export default async function TaskPage({
         <div className="min-w-0 md:col-start-1">
           <TaskComments
             taskUrl={taskUrl}
+            readOnly={readOnly}
             comments={comments.map((comment) => ({
               id: comment.id,
               body: comment.body,

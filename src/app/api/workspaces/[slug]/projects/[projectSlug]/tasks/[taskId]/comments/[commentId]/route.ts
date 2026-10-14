@@ -1,7 +1,10 @@
 import { NextResponse } from "next/server";
 
 import { requireVerifiedApiUser } from "@/lib/auth-guard";
-import { rejectUntrustedMutation } from "@/lib/request";
+import {
+  projectArchivedResponse,
+  rejectUntrustedMutation,
+} from "@/lib/request";
 import { deleteTaskComment } from "@/services/comment.service";
 
 export async function DELETE(
@@ -43,7 +46,11 @@ export async function DELETE(
       commentId,
     );
 
-    if (!deleted) {
+    if (!deleted.ok && deleted.error === "PROJECT_ARCHIVED") {
+      return projectArchivedResponse();
+    }
+
+    if (!deleted.ok || !deleted.value) {
       return NextResponse.json(
         {
           error: "NOT_FOUND",

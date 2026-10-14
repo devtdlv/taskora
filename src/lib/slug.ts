@@ -13,6 +13,12 @@ export function slugify(value: string, fallback: string) {
   return slug || fallback;
 }
 
+// Whether a slug already belongs to a name, including the numbered variants
+// pickAvailableSlug creates, so renaming "Acme" to "ACME" keeps "acme-2".
+export function slugMatchesBase(slug: string, baseSlug: string) {
+  return slug === baseSlug || new RegExp(`^${baseSlug}-\\d+$`).test(slug);
+}
+
 export function pickAvailableSlug(baseSlug: string, takenSlugs: string[]) {
   const taken = new Set(takenSlugs);
 

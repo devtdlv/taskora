@@ -17,9 +17,14 @@ type Comment = {
 type TaskCommentsProps = {
   taskUrl: string;
   comments: Comment[];
+  readOnly: boolean;
 };
 
-export function TaskComments({ taskUrl, comments }: TaskCommentsProps) {
+export function TaskComments({
+  taskUrl,
+  comments,
+  readOnly,
+}: TaskCommentsProps) {
   const router = useRouter();
   const [isRefreshing, startTransition] = useTransition();
   const [body, setBody] = useState("");
@@ -146,7 +151,9 @@ export function TaskComments({ taskUrl, comments }: TaskCommentsProps) {
 
       {comments.length === 0 ? (
         <p className="mt-3 text-sm text-zinc-500">
-          No comments yet. Start the conversation below.
+          {readOnly
+            ? "No comments."
+            : "No comments yet. Start the conversation below."}
         </p>
       ) : (
         <ul className="mt-4 divide-y divide-zinc-100">
@@ -179,7 +186,7 @@ export function TaskComments({ taskUrl, comments }: TaskCommentsProps) {
                     </time>
                   </p>
 
-                  {comment.isOwn && (
+                  {comment.isOwn && !readOnly && (
                     <button
                       type="button"
                       onClick={() => handleDelete(comment.id)}
@@ -206,43 +213,49 @@ export function TaskComments({ taskUrl, comments }: TaskCommentsProps) {
         </ul>
       )}
 
-      <form
-        className="mt-4 border-t border-line pt-5"
-        onSubmit={handleSubmit}
-      >
-        <label htmlFor="comment" className="tk-label">
-          Add a comment
-        </label>
+      {readOnly ? (
+        <p className="mt-4 border-t border-line pt-5 text-sm text-zinc-500">
+          Comments are closed while the project is archived.
+        </p>
+      ) : (
+        <form
+          className="mt-4 border-t border-line pt-5"
+          onSubmit={handleSubmit}
+        >
+          <label htmlFor="comment" className="tk-label">
+            Add a comment
+          </label>
 
-        <textarea
-          id="comment"
-          name="body"
-          rows={3}
-          value={body}
-          onChange={(event) => setBody(event.target.value)}
-          maxLength={2000}
-          placeholder="Write a comment"
-          aria-invalid={Boolean(formError)}
-          aria-describedby={formError ? "comment-error" : undefined}
-          className="tk-input tk-textarea mt-2"
-        />
+          <textarea
+            id="comment"
+            name="body"
+            rows={3}
+            value={body}
+            onChange={(event) => setBody(event.target.value)}
+            maxLength={2000}
+            placeholder="Write a comment"
+            aria-invalid={Boolean(formError)}
+            aria-describedby={formError ? "comment-error" : undefined}
+            className="tk-input tk-textarea mt-2"
+          />
 
-        {formError && (
-          <p id="comment-error" role="alert" className="tk-field-error">
-            {formError}
-          </p>
-        )}
+          {formError && (
+            <p id="comment-error" role="alert" className="tk-field-error">
+              {formError}
+            </p>
+          )}
 
-        <div className="mt-3 flex justify-end">
-          <button
-            type="submit"
-            disabled={isPostBusy || body.trim() === ""}
-            className="tk-btn tk-btn-primary w-full sm:w-auto"
-          >
-            {isPostBusy ? "Posting..." : "Post comment"}
-          </button>
-        </div>
-      </form>
+          <div className="mt-3 flex justify-end">
+            <button
+              type="submit"
+              disabled={isPostBusy || body.trim() === ""}
+              className="tk-btn tk-btn-primary w-full sm:w-auto"
+            >
+              {isPostBusy ? "Posting..." : "Post comment"}
+            </button>
+          </div>
+        </form>
+      )}
     </section>
   );
 }

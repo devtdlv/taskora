@@ -10,11 +10,13 @@ import { verifyEmailPath } from "@/lib/verify-email-path";
 type TaskStatusSelectProps = {
   taskUrl: string;
   initialStatus: TaskStatus;
+  readOnly: boolean;
 };
 
 export function TaskStatusSelect({
   taskUrl,
   initialStatus,
+  readOnly,
 }: TaskStatusSelectProps) {
   const router = useRouter();
   const [status, setStatus] = useState(initialStatus);
@@ -72,7 +74,7 @@ export function TaskStatusSelect({
         id="status"
         value={status}
         onChange={handleChange}
-        disabled={isSaving}
+        disabled={isSaving || readOnly}
         aria-describedby={error ? "status-error" : undefined}
         className="tk-input mt-2"
       >

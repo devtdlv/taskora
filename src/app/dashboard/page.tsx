@@ -31,7 +31,7 @@ export default async function DashboardPage() {
     {
       label: "Projects",
       value: projectCount,
-      hint: "Across your workspaces",
+      hint: "Active, across your workspaces",
     },
     {
       label: "Open tasks",

@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { requireVerifiedApiUser } from "@/lib/auth-guard";
 import {
   invalidJsonResponse,
+  projectArchivedResponse,
   readJsonBody,
   rejectUntrustedMutation,
 } from "@/lib/request";
@@ -49,7 +50,7 @@ export async function POST(
     }
 
     const { slug, projectSlug, taskId } = await params;
-    const comment = await createTaskComment(
+    const created = await createTaskComment(
       user.id,
       slug,
       projectSlug,
@@ -57,7 +58,11 @@ export async function POST(
       result.data.body,
     );
 
-    if (!comment) {
+    if (!created.ok && created.error === "PROJECT_ARCHIVED") {
+      return projectArchivedResponse();
+    }
+
+    if (!created.ok || !created.value) {
       return NextResponse.json(
         {
           error: "NOT_FOUND",
@@ -69,7 +74,7 @@ export async function POST(
 
     return NextResponse.json(
       {
-        comment,
+        comment: created.value,
       },
       { status: 201 },
     );

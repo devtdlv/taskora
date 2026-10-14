@@ -3,11 +3,11 @@ import { NextResponse } from "next/server";
 import { requireVerifiedApiUser } from "@/lib/auth-guard";
 import {
   invalidJsonResponse,
+  projectArchivedResponse,
   readJsonBody,
   rejectUntrustedMutation,
 } from "@/lib/request";
 import { createTaskSchema } from "@/lib/validations/task";
-import { getWorkspaceProject } from "@/services/project.service";
 import { createTask } from "@/services/task.service";
 
 export async function POST(
@@ -31,19 +31,6 @@ export async function POST(
 
     const { user } = auth;
 
-    const { slug, projectSlug } = await params;
-    const project = await getWorkspaceProject(user.id, slug, projectSlug);
-
-    if (!project) {
-      return NextResponse.json(
-        {
-          error: "NOT_FOUND",
-          message: "Project not found.",
-        },
-        { status: 404 },
-      );
-    }
-
     const body = await readJsonBody(request);
 
     if (body === undefined) {
@@ -62,11 +49,26 @@ export async function POST(
       );
     }
 
-    const task = await createTask(project.id, result.data);
+    const { slug, projectSlug } = await params;
+    const created = await createTask(user.id, slug, projectSlug, result.data);
+
+    if (!created.ok && created.error === "PROJECT_ARCHIVED") {
+      return projectArchivedResponse();
+    }
+
+    if (!created.ok) {
+      return NextResponse.json(
+        {
+          error: "NOT_FOUND",
+          message: "Project not found.",
+        },
+        { status: 404 },
+      );
+    }
 
     return NextResponse.json(
       {
-        task,
+        task: created.value,
       },
       { status: 201 },
     );

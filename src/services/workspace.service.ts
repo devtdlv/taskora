@@ -2,18 +2,26 @@ import { cache } from "react";
 
 import { Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
-import { pickAvailableSlug, slugify } from "@/lib/slug";
-import type { CreateWorkspaceInput } from "@/lib/validations/workspace";
+import { pickAvailableSlug, slugify, slugMatchesBase } from "@/lib/slug";
+import type {
+  CreateWorkspaceInput,
+  RenameWorkspaceInput,
+} from "@/lib/validations/workspace";
 import { lockWorkspaceMembership } from "@/services/workspace-lock";
 
 const MAX_CREATE_ATTEMPTS = 3;
 
-async function findAvailableSlug(baseSlug: string) {
-  const existing = await prisma.workspace.findMany({
+async function findAvailableSlug(
+  baseSlug: string,
+  db: Prisma.TransactionClient = prisma,
+  excludeWorkspaceId?: string,
+) {
+  const existing = await db.workspace.findMany({
     where: {
       slug: {
         startsWith: baseSlug,
       },
+      ...(excludeWorkspaceId && { id: { not: excludeWorkspaceId } }),
     },
     select: {
       slug: true,
@@ -60,21 +68,83 @@ export async function createWorkspace(
         return workspace;
       });
     } catch (error) {
-      // Two requests can pick the same free slug at once. The unique
-      // constraint rejects the second one, so look up a new slug and retry.
-      const isSlugTaken =
-        error instanceof Prisma.PrismaClientKnownRequestError &&
-        error.code === "P2002" &&
-        Array.isArray(error.meta?.target) &&
-        error.meta.target.includes("slug");
-
-      if (!isSlugTaken || attempt === MAX_CREATE_ATTEMPTS) {
+      if (!isWorkspaceSlugTaken(error) || attempt === MAX_CREATE_ATTEMPTS) {
         throw error;
       }
     }
   }
 
   throw new Error("Unable to create workspace.");
+}
+
+// Two requests can pick the same free slug at once. The unique constraint
+// rejects the second one, so it looks up a new slug and retries.
+function isWorkspaceSlugTaken(error: unknown) {
+  return (
+    error instanceof Prisma.PrismaClientKnownRequestError &&
+    error.code === "P2002" &&
+    Array.isArray(error.meta?.target) &&
+    error.meta.target.includes("slug")
+  );
+}
+
+type RenameWorkspaceResult =
+  | { ok: true; workspace: { name: string; slug: string } }
+  | { ok: false; error: "NOT_FOUND" | "FORBIDDEN" };
+
+// Like projects, the slug follows the name and only changes when the new name
+// produces a different base slug. Memberships, projects, and invitations
+// reference the workspace by ID, so they're unaffected.
+export async function renameWorkspace(
+  userId: string,
+  workspaceSlug: string,
+  input: RenameWorkspaceInput,
+) {
+  const baseSlug = slugify(input.name, "workspace");
+
+  for (let attempt = 1; attempt <= MAX_CREATE_ATTEMPTS; attempt++) {
+    try {
+      return await prisma.$transaction(
+        async (tx): Promise<RenameWorkspaceResult> => {
+          const actor = await lockWorkspaceMembership(tx, userId, workspaceSlug);
+
+          if (!actor) {
+            return { ok: false, error: "NOT_FOUND" };
+          }
+
+          if (actor.role !== "OWNER") {
+            return { ok: false, error: "FORBIDDEN" };
+          }
+
+          const slug = slugMatchesBase(workspaceSlug, baseSlug)
+            ? workspaceSlug
+            : await findAvailableSlug(baseSlug, tx, actor.workspaceId);
+
+          const workspace = await tx.workspace.update({
+            where: {
+              id: actor.workspaceId,
+            },
+            data: {
+              name: input.name,
+              slug,
+            },
+            select: {
+              name: true,
+              slug: true,
+            },
+          });
+
+          return { ok: true, workspace };
+        },
+      );
+    } catch (error) {
+      if (!isWorkspaceSlugTaken(error) || attempt === MAX_CREATE_ATTEMPTS) {
+        throw error;
+      }
+    }
+  }
+
+  throw new Error("Unable to rename workspace.");
 }
 
 export async function getUserWorkspaces(userId: string) {
@@ -94,7 +164,11 @@ export async function getUserWorkspaces(userId: string) {
           slug: true,
           _count: {
             select: {
-              projects: true,
+              projects: {
+                where: {
+                  archivedAt: null,
+                },
+              },
               members: true,
             },
           },
