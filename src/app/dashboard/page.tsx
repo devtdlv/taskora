@@ -1,9 +1,14 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 
 import { requireVerifiedUser } from "@/lib/auth-guard";
 import { getInitials } from "@/lib/initials";
 import { getOpenTaskCounts } from "@/services/task.service";
 import { getUserWorkspaces } from "@/services/workspace.service";
+
+export const metadata: Metadata = {
+  title: "Dashboard | Taskora",
+};
 
 function countLabel(count: number, singular: string, plural: string) {
   return `${count} ${count === 1 ? singular : plural}`;

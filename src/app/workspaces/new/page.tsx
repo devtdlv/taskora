@@ -1,7 +1,13 @@
+import type { Metadata } from "next";
+
 import { Breadcrumbs } from "@/components/breadcrumbs";
 import { requireVerifiedUser } from "@/lib/auth-guard";
 
 import { CreateWorkspaceForm } from "./create-workspace-form";
+
+export const metadata: Metadata = {
+  title: "New workspace | Taskora",
+};
 
 export default async function NewWorkspacePage() {
   await requireVerifiedUser("/workspaces/new");

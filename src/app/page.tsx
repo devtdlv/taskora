@@ -126,7 +126,7 @@ export default function Home() {
               {boardColumns.map((column) => (
                 <div key={column.title} className="rounded-xl bg-zinc-100 p-3">
                   <div className="mb-3 flex items-center justify-between">
-                    <h2 className="text-sm font-medium">{column.title}</h2>
+                    <p className="text-sm font-medium">{column.title}</p>
                     <span className="text-xs text-zinc-500">
                       {column.tasks.length}
                     </span>
@@ -240,9 +240,9 @@ export default function Home() {
 
           <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-6">
             <div className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
-              <h3 className="text-lg font-semibold">
+              <p className="text-lg font-semibold">
                 Launch pricing page
-              </h3>
+              </p>
 
               <p className="mt-3 text-sm leading-6 text-zinc-600">
                 Publish the new pricing page and link to it from the site

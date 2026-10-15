@@ -1,7 +1,7 @@
 export default function NewTaskLoading() {
   return (
     <div role="status" className="max-w-2xl">
-      <span className="sr-only">Loading</span>
+      <span className="sr-only">Loading the new task form</span>
 
       <div aria-hidden="true">
         <div className="tk-skeleton h-4 w-72 max-w-full" />

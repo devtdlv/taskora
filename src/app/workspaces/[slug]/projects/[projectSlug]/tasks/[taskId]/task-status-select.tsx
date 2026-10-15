@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { ChangeEvent, useState } from "react";
+import { ChangeEvent, useEffect, useRef, useState } from "react";
 
 import type { TaskStatus } from "@/generated/prisma/enums";
 import { TASK_STATUS_LABELS } from "@/lib/task";
@@ -22,10 +22,21 @@ export function TaskStatusSelect({
   const [status, setStatus] = useState(initialStatus);
   const [error, setError] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+  const selectRef = useRef<HTMLSelectElement>(null);
+  const refocus = useRef(false);
+
+  // The select is disabled while saving, which drops focus.
+  useEffect(() => {
+    if (!isSaving && refocus.current) {
+      refocus.current = false;
+      selectRef.current?.focus();
+    }
+  }, [isSaving]);
 
   async function handleChange(event: ChangeEvent<HTMLSelectElement>) {
     setError("");
     setIsSaving(true);
+    refocus.current = true;
 
     try {
       const response = await fetch(`/api${taskUrl}`, {
@@ -71,10 +82,12 @@ export function TaskStatusSelect({
       </label>
 
       <select
+        ref={selectRef}
         id="status"
         value={status}
         onChange={handleChange}
         disabled={isSaving || readOnly}
+        aria-invalid={Boolean(error)}
         aria-describedby={error ? "status-error" : undefined}
         className="tk-input mt-2"
       >
@@ -86,7 +99,7 @@ export function TaskStatusSelect({
       </select>
 
       {error && (
-        <p id="status-error" className="tk-field-error">
+        <p id="status-error" role="alert" className="tk-field-error">
           {error}
         </p>
       )}

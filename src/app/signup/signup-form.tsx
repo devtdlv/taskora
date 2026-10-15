@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
 
 import { AuthShell } from "@/components/auth-shell";
+import { showFieldErrors } from "@/lib/focus-invalid-field";
 
 type FieldErrors = {
   name?: string[];
@@ -36,7 +37,8 @@ export function SignupForm({ redirectPath }: SignupFormProps) {
     setFormError("");
     setIsSubmitting(true);
 
-    const formData = new FormData(event.currentTarget);
+    const form = event.currentTarget;
+    const formData = new FormData(form);
 
     const payload = {
       name: formData.get("name"),
@@ -59,14 +61,16 @@ export function SignupForm({ redirectPath }: SignupFormProps) {
 
       if (!response.ok) {
         if (data.error === "VALIDATION_ERROR") {
-          setFieldErrors(data.fields ?? {});
+          showFieldErrors(form, () => setFieldErrors(data.fields ?? {}));
           return;
         }
 
         if (data.error === "EMAIL_ALREADY_EXISTS") {
-          setFieldErrors({
-            email: ["An account with this email already exists."],
-          });
+          showFieldErrors(form, () =>
+            setFieldErrors({
+              email: ["An account with this email already exists."],
+            }),
+          );
           return;
         }
 

@@ -183,11 +183,9 @@ export function PendingInvitations({
 
   return (
     <>
-      {notice && (
-        <p role="status" className="tk-alert-success mt-4">
-          {notice}
-        </p>
-      )}
+      <div role="status">
+        {notice && <p className="tk-alert-success mt-4">{notice}</p>}
+      </div>
 
       {invitations.length === 0 ? (
         <div className="tk-empty mt-4 py-10">
@@ -229,7 +227,7 @@ export function PendingInvitations({
                       type="button"
                       onClick={() => handleNewLink(invitation)}
                       disabled={renewingId !== null}
-                      aria-label={`Create a new invitation link for ${invitation.email}`}
+                      aria-label={`New link for ${invitation.email}`}
                       className="tk-btn tk-btn-secondary tk-btn-sm"
                     >
                       {isRenewing ? "Creating..." : "New link"}

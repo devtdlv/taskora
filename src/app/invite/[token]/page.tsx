@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 
 import { ResendVerification } from "@/app/verify-email/resend-verification";
@@ -11,6 +12,10 @@ import { getWorkspaceMembership } from "@/services/workspace.service";
 import { AcceptInvitationButton } from "./accept-invitation-button";
 
 const linkButtonClass = "tk-btn tk-btn-primary tk-btn-lg w-full";
+
+export const metadata: Metadata = {
+  title: "Workspace invitation | Taskora",
+};
 
 export default async function InvitePage({
   params,

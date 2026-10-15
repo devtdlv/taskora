@@ -163,7 +163,7 @@ test("the move route follows the API conventions", () => {
 });
 
 test("drag and drop keeps keyboard, screen reader, and status select support", () => {
-  const board = read("app", "workspaces", "[slug]", "projects", "[projectSlug]", "kanban-board.tsx");
+  const board = read("app", "workspaces", "[slug]", "projects", "[projectSlug]", "(board)", "kanban-board.tsx");
 
   assert.match(board, /useSensor\(KeyboardSensor, \{\s*coordinateGetter: sortableKeyboardCoordinates/);
   assert.match(board, /useSensor\(PointerSensor/);

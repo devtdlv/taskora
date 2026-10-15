@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
 
+import { showFieldErrors } from "@/lib/focus-invalid-field";
 import { TASK_PRIORITIES, TASK_PRIORITY_LABELS } from "@/lib/task";
 import { verifyEmailPath } from "@/lib/verify-email-path";
 
@@ -36,7 +37,8 @@ export function CreateTaskForm({
     setFormError("");
     setIsSubmitting(true);
 
-    const formData = new FormData(event.currentTarget);
+    const form = event.currentTarget;
+    const formData = new FormData(form);
 
     const payload = {
       title: formData.get("title"),
@@ -58,7 +60,7 @@ export function CreateTaskForm({
 
       if (!response.ok) {
         if (data.error === "VALIDATION_ERROR") {
-          setFieldErrors(data.fields ?? {});
+          showFieldErrors(form, () => setFieldErrors(data.fields ?? {}));
           return;
         }
 

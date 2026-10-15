@@ -26,6 +26,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   type ReactNode,
+  useEffect,
   useId,
   useMemo,
   useRef,
@@ -108,6 +109,10 @@ export function KanbanBoard({
     null,
   );
   const [boardError, setBoardError] = useState("");
+  const [statusNotice, setStatusNotice] = useState("");
+  // A card whose status changed moves to another column and is remounted,
+  // which drops focus. Its status menu is focused again once the board settles.
+  const refocusTaskId = useRef<string | null>(null);
   // The board while a card is being dragged or its move is saving. Clearing
   // it shows the saved order from the server again, which is also how a
   // failed move is undone.
@@ -125,6 +130,15 @@ export function KanbanBoard({
 
   const isBusy = updating !== null || isMoving || isRefreshing;
 
+  useEffect(() => {
+    if (isBusy || !refocusTaskId.current) {
+      return;
+    }
+
+    document.getElementById(`status-${refocusTaskId.current}`)?.focus();
+    refocusTaskId.current = null;
+  }, [isBusy, tasks]);
+
   const sensors = useSensors(
     // A short distance lets the handle still be focused and clicked.
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
@@ -137,32 +151,34 @@ export function KanbanBoard({
     return tasksById.get(String(id))?.title ?? "Task";
   }
 
-  // Describes where a card is, using the board as currently shown.
-  function placeOf(id: string | number) {
-    const status = findColumn(columns, String(id));
+  // Describes where the dragged card would land if dropped on overId. The
+  // announcement runs before the board re-renders, and reordering within a
+  // column is only applied on drop, so the card's own place can't be used.
+  function placeOf(activeId: string | number, overId: string | number) {
+    const status = findColumn(columns, String(overId));
 
     if (!status) {
       return "";
     }
 
-    const index = columns[status].indexOf(String(id));
-    const count = columns[status].length;
+    const items = columns[status];
+    const count = items.includes(String(activeId)) ? items.length : items.length + 1;
+    const index = items.indexOf(String(overId));
+    const position = index === -1 ? count : index + 1;
 
-    return index === -1
-      ? TASK_STATUS_LABELS[status]
-      : `${TASK_STATUS_LABELS[status]}, position ${index + 1} of ${count}`;
+    return `${TASK_STATUS_LABELS[status]}, position ${position} of ${count}`;
   }
 
   const announcements: Announcements = {
     onDragStart: ({ active }) =>
-      `Picked up ${titleOf(active.id)}. It's in ${placeOf(active.id)}.`,
+      `Picked up ${titleOf(active.id)}. It's in ${placeOf(active.id, active.id)}.`,
     onDragOver: ({ active, over }) =>
       over
-        ? `${titleOf(active.id)} is now in ${placeOf(active.id)}.`
+        ? `${titleOf(active.id)} is now in ${placeOf(active.id, over.id)}.`
         : `${titleOf(active.id)} is no longer over a column.`,
     onDragEnd: ({ active, over }) =>
       over
-        ? `Dropped ${titleOf(active.id)} in ${placeOf(active.id)}.`
+        ? `Dropped ${titleOf(active.id)} in ${placeOf(active.id, over.id)}.`
         : `Dropped ${titleOf(active.id)}. It wasn't moved.`,
     onDragCancel: ({ active }) =>
       `Move cancelled. ${titleOf(active.id)} is back where it was.`,
@@ -321,7 +337,9 @@ export function KanbanBoard({
   async function handleStatusChange(taskId: string, status: TaskStatus) {
     setError(null);
     setBoardError("");
+    setStatusNotice("");
     setUpdating({ taskId, status });
+    refocusTaskId.current = taskId;
 
     try {
       const response = await fetch(`/api${projectHref}/tasks/${taskId}`, {
@@ -358,6 +376,7 @@ export function KanbanBoard({
       // back to its old status before moving to the new column.
       startTransition(() => {
         setUpdating(null);
+        setStatusNotice(`Moved ${titleOf(taskId)} to ${TASK_STATUS_LABELS[status]}.`);
         router.refresh();
       });
     } catch {
@@ -382,7 +401,7 @@ export function KanbanBoard({
       )}
 
       <p role="status" aria-live="polite" className="sr-only">
-        {isMoving ? "Saving the new order..." : ""}
+        {isMoving ? "Saving the new order..." : statusNotice}
       </p>
 
       {boardError && (
@@ -645,12 +664,14 @@ function SortableCard({
 
       {!readOnly && (
         <select
+          id={`status-${task.id}`}
           aria-label={`Status for ${task.title}`}
           value={selectedStatus}
           onChange={(event) =>
             onStatusChange(task.id, event.target.value as TaskStatus)
           }
           disabled={isBusy}
+          aria-invalid={Boolean(error)}
           aria-describedby={error ? `status-error-${task.id}` : undefined}
           className="tk-input tk-input-sm relative z-10 mt-3 h-10 cursor-pointer bg-zinc-50 text-sm font-medium text-zinc-700 shadow-none hover:bg-white md:h-8 md:text-xs"
         >
@@ -663,7 +684,11 @@ function SortableCard({
       )}
 
       {error && (
-        <p id={`status-error-${task.id}`} className="tk-field-error relative z-10">
+        <p
+          id={`status-error-${task.id}`}
+          role="alert"
+          className="tk-field-error relative z-10"
+        >
           {error}
         </p>
       )}

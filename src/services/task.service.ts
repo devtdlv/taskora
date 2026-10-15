@@ -1,3 +1,5 @@
+import { cache } from "react";
+
 import type { Prisma } from "@/generated/prisma/client";
 import type { TaskStatus } from "@/generated/prisma/enums";
 import { prisma } from "@/lib/prisma";
@@ -120,53 +122,56 @@ export async function getOpenTaskCounts(userId: string) {
 
 // Like getWorkspaceProject, the task is only matched through its project,
 // workspace, and the user's membership, so a known task ID alone is never
-// enough to read it. Missing and inaccessible tasks both return null.
-export async function getProjectTask(
-  userId: string,
-  workspaceSlug: string,
-  projectSlug: string,
-  taskId: string,
-) {
-  return prisma.task.findFirst({
-    where: {
-      id: taskId,
-      project: {
-        slug: projectSlug,
-        workspace: {
-          slug: workspaceSlug,
-          members: {
-            some: {
-              userId,
-            },
-          },
-        },
-      },
-    },
-    select: {
-      id: true,
-      title: true,
-      description: true,
-      status: true,
-      priority: true,
-      dueDate: true,
-      assigneeId: true,
-      project: {
-        select: {
-          name: true,
-          slug: true,
-          archivedAt: true,
+// enough to read it. Missing and inaccessible tasks both return null. Cached
+// per request because the task layout and its page both look the task up.
+export const getProjectTask = cache(
+  async (
+    userId: string,
+    workspaceSlug: string,
+    projectSlug: string,
+    taskId: string,
+  ) => {
+    return prisma.task.findFirst({
+      where: {
+        id: taskId,
+        project: {
+          slug: projectSlug,
           workspace: {
-            select: {
-              id: true,
-              name: true,
-              slug: true,
+            slug: workspaceSlug,
+            members: {
+              some: {
+                userId,
+              },
             },
           },
         },
       },
-    },
-  });
-}
+      select: {
+        id: true,
+        title: true,
+        description: true,
+        status: true,
+        priority: true,
+        dueDate: true,
+        assigneeId: true,
+        project: {
+          select: {
+            name: true,
+            slug: true,
+            archivedAt: true,
+            workspace: {
+              select: {
+                id: true,
+                name: true,
+                slug: true,
+              },
+            },
+          },
+        },
+      },
+    });
+  },
+);
 
 // The task writes below run through writeToActiveProject, which has already
 // matched the project through the user's membership and confirmed it isn't

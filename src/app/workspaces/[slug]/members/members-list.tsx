@@ -92,11 +92,9 @@ export function MembersList({
 
   return (
     <>
-      {notice && (
-        <p role="status" className="tk-alert-success mt-4">
-          {notice}
-        </p>
-      )}
+      <div role="status">
+        {notice && <p className="tk-alert-success mt-4">{notice}</p>}
+      </div>
 
       <ul className="tk-card mt-4 divide-y divide-zinc-200 overflow-hidden">
         {members.map((member) => (

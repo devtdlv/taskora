@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
@@ -6,6 +7,10 @@ import { requireVerifiedUser } from "@/lib/auth-guard";
 import { getWorkspaceProject } from "@/services/project.service";
 
 import { CreateTaskForm } from "./create-task-form";
+
+export const metadata: Metadata = {
+  title: "New task",
+};
 
 export default async function NewTaskPage({
   params,

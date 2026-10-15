@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
 
 import { AuthShell } from "@/components/auth-shell";
+import { showFieldErrors } from "@/lib/focus-invalid-field";
 import { formatWait } from "@/lib/format-wait";
 
 type FieldErrors = {
@@ -34,7 +35,8 @@ export function LoginForm({ redirectPath }: LoginFormProps) {
     setFormError("");
     setIsSubmitting(true);
 
-    const formData = new FormData(event.currentTarget);
+    const form = event.currentTarget;
+    const formData = new FormData(form);
 
     const payload = {
       email: formData.get("email"),
@@ -55,7 +57,7 @@ export function LoginForm({ redirectPath }: LoginFormProps) {
 
       if (!response.ok) {
         if (data.error === "VALIDATION_ERROR") {
-          setFieldErrors(data.fields ?? {});
+          showFieldErrors(form, () => setFieldErrors(data.fields ?? {}));
           return;
         }
 

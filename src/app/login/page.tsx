@@ -1,9 +1,14 @@
+import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
 import { getSafeRedirectPath } from "@/lib/redirect";
 import { getCurrentUser } from "@/lib/session";
 
 import { LoginForm } from "./login-form";
+
+export const metadata: Metadata = {
+  title: "Log in | Taskora",
+};
 
 export default async function LoginPage({
   searchParams,

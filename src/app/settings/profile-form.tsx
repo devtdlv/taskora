@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { FormEvent, useRef, useState, useTransition } from "react";
 
+import { showFieldErrors } from "@/lib/focus-invalid-field";
 import { verifyEmailPath } from "@/lib/verify-email-path";
 
 export function ProfileForm({ name }: { name: string }) {
@@ -22,12 +23,13 @@ export function ProfileForm({ name }: { name: string }) {
       return;
     }
 
+    const form = event.currentTarget;
     setFieldError("");
     setFormError("");
     setNotice("");
 
     if (value.trim().length < 2) {
-      setFieldError("Name must be at least 2 characters.");
+      showFieldErrors(form, () => setFieldError("Name must be at least 2 characters."));
       return;
     }
 
@@ -57,7 +59,9 @@ export function ProfileForm({ name }: { name: string }) {
         }
 
         if (data.error === "VALIDATION_ERROR") {
-          setFieldError(data.fields?.name?.[0] ?? "Enter a valid name.");
+          showFieldErrors(form, () =>
+            setFieldError(data.fields?.name?.[0] ?? "Enter a valid name."),
+          );
           return;
         }
 

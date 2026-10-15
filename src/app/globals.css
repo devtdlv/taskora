@@ -24,8 +24,11 @@
     color-scheme: light;
   }
 
+  /* Names, emails and titles are user-supplied, so a long unbroken string
+     wraps instead of pushing the layout sideways on small screens. */
   body {
     @apply bg-surface text-ink;
+    overflow-wrap: break-word;
   }
 
   /* Inputs draw their own focus ring; everything else that can be focused

@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
@@ -8,6 +9,10 @@ import { TASK_PRIORITIES, TASK_STATUS_LABELS } from "@/lib/task";
 import { getProjectAnalytics } from "@/services/analytics.service";
 
 import { ProjectTabs } from "../project-tabs";
+
+export const metadata: Metadata = {
+  title: "Analytics",
+};
 
 const STATUSES = ["TODO", "IN_PROGRESS", "DONE"] as const;
 

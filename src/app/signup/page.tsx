@@ -1,9 +1,14 @@
+import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
 import { getSafeRedirectPath } from "@/lib/redirect";
 import { getCurrentUser } from "@/lib/session";
 
 import { SignupForm } from "./signup-form";
+
+export const metadata: Metadata = {
+  title: "Create an account | Taskora",
+};
 
 export default async function SignupPage({
   searchParams,

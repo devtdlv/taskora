@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { FormEvent, useState, useTransition } from "react";
 
+import { showFieldErrors } from "@/lib/focus-invalid-field";
 import { verifyEmailPath } from "@/lib/verify-email-path";
 
 type WorkspaceNameProps = {
@@ -27,7 +28,8 @@ export function WorkspaceName({ workspaceSlug, name, isOwner }: WorkspaceNamePro
     setFormError("");
     setIsSaving(true);
 
-    const formData = new FormData(event.currentTarget);
+    const form = event.currentTarget;
+    const formData = new FormData(form);
 
     try {
       const response = await fetch(`/api/workspaces/${workspaceSlug}`, {
@@ -52,7 +54,9 @@ export function WorkspaceName({ workspaceSlug, name, isOwner }: WorkspaceNamePro
         }
 
         if (data.error === "VALIDATION_ERROR") {
-          setFieldError(data.fields?.name?.[0] ?? "Enter a valid name.");
+          showFieldErrors(form, () =>
+            setFieldError(data.fields?.name?.[0] ?? "Enter a valid name."),
+          );
           return;
         }
 
@@ -142,7 +146,7 @@ export function WorkspaceName({ workspaceSlug, name, isOwner }: WorkspaceNamePro
   return (
     <div className="min-w-0">
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-        <h1 className="tk-page-title truncate">{name}</h1>
+        <h1 className="tk-page-title min-w-0">{name}</h1>
         <span className={`tk-badge ${isOwner ? "tk-badge-accent" : ""}`}>
           {isOwner ? "Owner" : "Member"}
         </span>
@@ -164,11 +168,9 @@ export function WorkspaceName({ workspaceSlug, name, isOwner }: WorkspaceNamePro
       </div>
       <p className="mt-1 truncate text-sm text-zinc-500">/{workspaceSlug}</p>
 
-      {notice && (
-        <p role="status" className="mt-2 text-sm text-emerald-700">
-          {notice}
-        </p>
-      )}
+      <div role="status">
+        {notice && <p className="mt-2 text-sm text-emerald-700">{notice}</p>}
+      </div>
     </div>
   );
 }

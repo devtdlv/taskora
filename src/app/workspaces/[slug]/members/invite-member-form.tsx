@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { FormEvent, useRef, useState } from "react";
 
+import { showFieldErrors } from "@/lib/focus-invalid-field";
 import { verifyEmailPath } from "@/lib/verify-email-path";
 
 type CreatedInvitation = {
@@ -50,12 +51,14 @@ export function InviteMemberForm({ workspaceSlug }: InviteMemberFormProps) {
 
       if (!response.ok) {
         if (data.error === "VALIDATION_ERROR") {
-          setEmailError(data.fields?.email?.[0] ?? "Enter a valid email address.");
+          showFieldErrors(form, () =>
+            setEmailError(data.fields?.email?.[0] ?? "Enter a valid email address."),
+          );
           return;
         }
 
         if (data.error === "ALREADY_MEMBER") {
-          setEmailError(data.message);
+          showFieldErrors(form, () => setEmailError(data.message));
           return;
         }
 

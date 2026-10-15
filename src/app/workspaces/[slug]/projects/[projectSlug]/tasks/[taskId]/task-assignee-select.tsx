@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { ChangeEvent, useState, useTransition } from "react";
+import { ChangeEvent, useEffect, useRef, useState, useTransition } from "react";
 
 import { verifyEmailPath } from "@/lib/verify-email-path";
 
@@ -27,12 +27,24 @@ export function TaskAssigneeSelect({
   const [isRefreshing, startTransition] = useTransition();
   const [pendingValue, setPendingValue] = useState<string | null>(null);
   const [error, setError] = useState("");
+  const selectRef = useRef<HTMLSelectElement>(null);
+  const refocus = useRef(false);
+  const isSaving = pendingValue !== null || isRefreshing;
+
+  // The select is disabled while saving, which drops focus.
+  useEffect(() => {
+    if (!isSaving && refocus.current) {
+      refocus.current = false;
+      selectRef.current?.focus();
+    }
+  }, [isSaving]);
 
   async function handleChange(event: ChangeEvent<HTMLSelectElement>) {
     const value = event.target.value;
 
     setError("");
     setPendingValue(value);
+    refocus.current = true;
 
     try {
       const response = await fetch(`/api${taskUrl}/assignee`, {
@@ -78,10 +90,12 @@ export function TaskAssigneeSelect({
       </label>
 
       <select
+        ref={selectRef}
         id="assignee"
         value={pendingValue ?? assigneeId ?? ""}
         onChange={handleChange}
-        disabled={pendingValue !== null || isRefreshing || readOnly}
+        disabled={isSaving || readOnly}
+        aria-invalid={Boolean(error)}
         aria-describedby={error ? "assignee-error" : undefined}
         className="tk-input mt-2"
       >
@@ -94,7 +108,7 @@ export function TaskAssigneeSelect({
       </select>
 
       {error && (
-        <p id="assignee-error" className="tk-field-error">
+        <p id="assignee-error" role="alert" className="tk-field-error">
           {error}
         </p>
       )}

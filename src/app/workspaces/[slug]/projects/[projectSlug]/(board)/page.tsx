@@ -9,7 +9,7 @@ import { getProjectTasks } from "@/services/task.service";
 
 import { KanbanBoard } from "./kanban-board";
 import { ProjectHeader } from "./project-header";
-import { ProjectTabs } from "./project-tabs";
+import { ProjectTabs } from "../project-tabs";
 
 export default async function ProjectPage({
   params,

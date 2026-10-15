@@ -91,11 +91,9 @@ export function OtherSessions() {
         </div>
       )}
 
-      {notice && (
-        <p role="status" className="mt-4 text-sm text-emerald-700">
-          {notice}
-        </p>
-      )}
+      <div role="status">
+        {notice && <p className="mt-4 text-sm text-emerald-700">{notice}</p>}
+      </div>
     </section>
   );
 }

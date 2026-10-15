@@ -214,11 +214,9 @@ export function PasswordForm() {
         </div>
       )}
 
-      {notice && (
-        <div role="status" className="tk-alert-success">
-          {notice}
-        </div>
-      )}
+      <div role="status" className="empty:mb-0">
+        {notice && <div className="tk-alert-success">{notice}</div>}
+      </div>
 
       {passwordField("currentPassword", "Current password", "current-password")}
       {passwordField("newPassword", "New password", "new-password", "Use at least 8 characters.")}

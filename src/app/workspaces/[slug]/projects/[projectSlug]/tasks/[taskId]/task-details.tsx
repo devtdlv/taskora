@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { FormEvent, useState, useTransition } from "react";
 
 import type { TaskPriority } from "@/generated/prisma/enums";
+import { showFieldErrors } from "@/lib/focus-invalid-field";
 import { TASK_PRIORITIES, TASK_PRIORITY_LABELS } from "@/lib/task";
 import { verifyEmailPath } from "@/lib/verify-email-path";
 
@@ -54,7 +55,8 @@ export function TaskDetails({
     setFormError("");
     setIsSaving(true);
 
-    const formData = new FormData(event.currentTarget);
+    const form = event.currentTarget;
+    const formData = new FormData(form);
 
     const payload = {
       title: formData.get("title"),
@@ -86,7 +88,7 @@ export function TaskDetails({
         }
 
         if (data.error === "VALIDATION_ERROR") {
-          setFieldErrors(data.fields ?? {});
+          showFieldErrors(form, () => setFieldErrors(data.fields ?? {}));
           return;
         }
 
@@ -167,6 +169,7 @@ export function TaskDetails({
             type="text"
             defaultValue={title}
             maxLength={120}
+            autoFocus
             aria-invalid={Boolean(fieldErrors.title)}
             aria-describedby={fieldErrors.title ? "title-error" : undefined}
             className="tk-input mt-2"

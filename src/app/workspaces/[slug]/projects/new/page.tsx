@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
 import { Breadcrumbs } from "@/components/breadcrumbs";
@@ -5,6 +6,10 @@ import { requireVerifiedUser } from "@/lib/auth-guard";
 import { getWorkspaceMembership } from "@/services/workspace.service";
 
 import { CreateProjectForm } from "./create-project-form";
+
+export const metadata: Metadata = {
+  title: "New project",
+};
 
 export default async function NewProjectPage({
   params,

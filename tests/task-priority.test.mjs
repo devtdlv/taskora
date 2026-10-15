@@ -18,7 +18,9 @@ const CACHE = join(ROOT, "node_modules", ".cache", "taskora-tests");
 const read = (...parts) => readFileSync(join(SRC, ...parts), "utf8");
 
 function exported(source, name) {
-  const start = source.search(new RegExp(`export async function ${name}[(<]`));
+  const start = source.search(
+    new RegExp(`export (async function ${name}[(<]|const ${name} = )`),
+  );
   assert.notEqual(start, -1, `${name} not found.`);
   const next = source.indexOf("\nexport ", start + 1);
   return source.slice(start, next === -1 ? undefined : next);

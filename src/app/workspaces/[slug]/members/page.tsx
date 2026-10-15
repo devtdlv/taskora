@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
 import { Breadcrumbs } from "@/components/breadcrumbs";
@@ -12,6 +13,10 @@ import { InviteMemberForm } from "./invite-member-form";
 import { LeaveWorkspace } from "./leave-workspace";
 import { MembersList } from "./members-list";
 import { PendingInvitations } from "./pending-invitations";
+
+export const metadata: Metadata = {
+  title: "Members",
+};
 
 export default async function WorkspaceMembersPage({
   params,

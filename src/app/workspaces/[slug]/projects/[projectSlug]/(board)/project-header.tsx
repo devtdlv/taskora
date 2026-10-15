@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { FormEvent, useState, useTransition } from "react";
 
 import { ConfirmDialog } from "@/components/confirm-dialog";
+import { showFieldErrors } from "@/lib/focus-invalid-field";
 import { verifyEmailPath } from "@/lib/verify-email-path";
 
 type FieldErrors = {
@@ -79,7 +80,8 @@ export function ProjectHeader({
     setFormError("");
     setIsSaving(true);
 
-    const formData = new FormData(event.currentTarget);
+    const form = event.currentTarget;
+    const formData = new FormData(form);
 
     try {
       const result = await send("", {
@@ -99,7 +101,7 @@ export function ProjectHeader({
 
       if (!result.ok) {
         if (result.data.error === "VALIDATION_ERROR") {
-          setFieldErrors(result.data.fields ?? {});
+          showFieldErrors(form, () => setFieldErrors(result.data.fields ?? {}));
           return;
         }
 
@@ -313,11 +315,9 @@ export function ProjectHeader({
         </div>
       )}
 
-      {notice && (
-        <div role="status" className="tk-alert-success mt-4">
-          {notice}
-        </div>
-      )}
+      <div role="status">
+        {notice && <div className="tk-alert-success mt-4">{notice}</div>}
+      </div>
 
       <div className="tk-page-header mt-4">
         <div className="min-w-0">
