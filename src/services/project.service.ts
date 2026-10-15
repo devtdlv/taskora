@@ -1,3 +1,5 @@
+import { cache } from "react";
+
 import { Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
 import { pickAvailableSlug, slugify, slugMatchesBase } from "@/lib/slug";
@@ -232,36 +234,35 @@ export async function getArchivedWorkspaceProjects(workspaceId: string) {
 
 // The project is looked up through the workspace and the user's membership in
 // one query, so a project can never be returned outside its workspace. Missing
-// and inaccessible projects both return null.
-export async function getWorkspaceProject(
-  userId: string,
-  workspaceSlug: string,
-  projectSlug: string,
-) {
-  return prisma.project.findFirst({
-    where: {
-      slug: projectSlug,
-      workspace: {
-        slug: workspaceSlug,
-        members: {
-          some: {
-            userId,
+// and inaccessible projects both return null. Cached per request because the
+// project layout and its pages both look the project up.
+export const getWorkspaceProject = cache(
+  async (userId: string, workspaceSlug: string, projectSlug: string) => {
+    return prisma.project.findFirst({
+      where: {
+        slug: projectSlug,
+        workspace: {
+          slug: workspaceSlug,
+          members: {
+            some: {
+              userId,
+            },
           },
         },
       },
-    },
-    select: {
-      id: true,
-      name: true,
-      slug: true,
-      description: true,
-      archivedAt: true,
-      workspace: {
-        select: {
-          name: true,
-          slug: true,
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        description: true,
+        archivedAt: true,
+        workspace: {
+          select: {
+            name: true,
+            slug: true,
+          },
         },
       },
-    },
-  });
-}
+    });
+  },
+);

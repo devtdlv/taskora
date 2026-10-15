@@ -9,6 +9,7 @@ import { getProjectTasks } from "@/services/task.service";
 
 import { KanbanBoard } from "./kanban-board";
 import { ProjectHeader } from "./project-header";
+import { ProjectTabs } from "./project-tabs";
 
 export default async function ProjectPage({
   params,
@@ -49,7 +50,9 @@ export default async function ProjectPage({
         showCreateTask={tasks.length > 0}
       />
 
-      <section aria-labelledby="tasks-heading" className="mt-10">
+      <ProjectTabs projectHref={projectHref} current="board" />
+
+      <section aria-labelledby="tasks-heading" className="mt-8">
         <div className="flex items-center gap-2">
           <h2 id="tasks-heading" className="tk-section-title">
             Tasks
