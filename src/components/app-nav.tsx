@@ -38,6 +38,15 @@ export function AppNav({ workspace }: { workspace?: NavWorkspace }) {
             Dashboard
           </Link>
         </li>
+        <li>
+          <Link
+            href="/settings"
+            aria-current={pathname === "/settings" ? "page" : undefined}
+            className="tk-nav-link"
+          >
+            Settings
+          </Link>
+        </li>
       </ul>
 
       {workspace && workspaceHref && (

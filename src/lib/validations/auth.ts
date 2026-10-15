@@ -18,13 +18,15 @@ const newPasswordSchema = z
     "Password must be 72 characters or fewer. Some characters, such as emoji, count as more than one.",
   );
 
+const displayNameSchema = z
+  .string()
+  .trim()
+  .min(2, "Name must be at least 2 characters.")
+  .max(100, "Name must be 100 characters or fewer.");
+
 export const signupSchema = z
   .object({
-    name: z
-      .string()
-      .trim()
-      .min(2, "Name must be at least 2 characters.")
-      .max(100, "Name must be 100 characters or fewer."),
+    name: displayNameSchema,
 
     email: z
       .string()
@@ -81,6 +83,27 @@ export const forgotPasswordSchema = z
       .transform((email) => email.toLowerCase()),
   })
   .strict();
+
+export const updateProfileSchema = z.strictObject({
+  name: displayNameSchema,
+});
+
+export const changePasswordSchema = z
+  .strictObject({
+    currentPassword: z.string().min(1, "Enter your current password."),
+    newPassword: newPasswordSchema,
+    confirmNewPassword: z.string(),
+  })
+  .refine((data) => data.newPassword === data.confirmNewPassword, {
+    message: "Passwords do not match.",
+    path: ["confirmNewPassword"],
+  })
+  .refine((data) => data.newPassword !== data.currentPassword, {
+    message: "Choose a password that's different from your current one.",
+    path: ["newPassword"],
+  });
+
+export type ChangePasswordInput = z.infer<typeof changePasswordSchema>;
 
 export const resetPasswordSchema = z
   .object({

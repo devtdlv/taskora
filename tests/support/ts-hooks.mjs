@@ -1,7 +1,8 @@
 // Module hooks that let node --test import the app's TypeScript directly:
 // .ts files are transpiled with the project's own TypeScript, "@/" resolves
-// to src/, and "server-only" becomes an empty module. Types aren't checked
-// here; npx tsc --noEmit does that.
+// to src/, "server-only" becomes an empty module, and "next/headers" is
+// replaced by tests/support/next-headers.mjs. Types aren't checked here;
+// npx tsc --noEmit does that.
 
 import { readFileSync, statSync } from "node:fs";
 import { fileURLToPath } from "node:url";
@@ -10,6 +11,7 @@ import ts from "typescript";
 
 const SRC = new URL("../../src/", import.meta.url);
 const EMPTY_MODULE = "data:text/javascript,export {};";
+const NEXT_HEADERS = new URL("./next-headers.mjs", import.meta.url).href;
 const SUFFIXES = ["", ".ts", ".tsx", "/index.ts"];
 
 function findSource(url) {
@@ -31,6 +33,10 @@ function findSource(url) {
 export async function resolve(specifier, context, nextResolve) {
   if (specifier === "server-only") {
     return { url: EMPTY_MODULE, shortCircuit: true };
+  }
+
+  if (specifier === "next/headers") {
+    return { url: NEXT_HEADERS, shortCircuit: true };
   }
 
   if (specifier.startsWith("@/")) {

@@ -71,6 +71,13 @@ export const RATE_LIMITS = {
     limit: 30,
     windowSeconds: 15 * MINUTE,
   },
+  // Keyed by account, so a stolen session can't be used to guess the current
+  // password quickly.
+  passwordChangeByUser: {
+    name: "password-change:user",
+    limit: 5,
+    windowSeconds: 15 * MINUTE,
+  },
 } satisfies Record<string, RateLimitRule>;
 
 const UNAVAILABLE_RETRY_AFTER_SECONDS = 60;

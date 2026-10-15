@@ -80,6 +80,15 @@ export const getCurrentUser = cache(async () => {
   return session.user;
 });
 
+// The ID of the session making this request, so account changes that sign out
+// other devices can spare it. Only the hash is returned, never the token.
+export async function getCurrentSessionId() {
+  const cookieStore = await cookies();
+  const token = cookieStore.get(SESSION_COOKIE)?.value;
+
+  return token ? hashToken(token) : null;
+}
+
 export async function deleteSession() {
   const cookieStore = await cookies();
   const token = cookieStore.get(SESSION_COOKIE)?.value;
