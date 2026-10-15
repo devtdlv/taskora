@@ -745,11 +745,7 @@ The application itself may run directly through Node.js during development while
 
 ## Deployment
 
-Production deployment will be introduced after the core application is functional.
-
-AWS is the planned production environment.
-
-The exact architecture will be determined based on the requirements of the completed application rather than selecting infrastructure prematurely.
+Taskora is a portfolio project and is not planned for deployment. It runs locally, and its CI pipeline runs against a throwaway PostgreSQL service. The README's deployment notes are optional technical documentation for anyone hosting their own copy.
 
 ## Future Features
 

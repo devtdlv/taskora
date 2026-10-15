@@ -2,7 +2,16 @@
 
 Taskora is a multi-tenant project management app built with Next.js, TypeScript, PostgreSQL, and Prisma. Teams work in shared workspaces, organize work into projects, and track tasks on a Kanban board.
 
-Taskora is still in development. It has not been deployed and is not production-ready yet. See [Before deploying](#before-deploying) for what is still outstanding.
+Taskora is a portfolio project. It was built to demonstrate full-stack engineering: data modeling, authentication, authorization between tenants, accessible interactive UI, and automated testing. It is not deployed, there is no live demo, and it is not offered as a commercial product. To try it, run it locally by following [Local setup](#local-setup).
+
+## Highlights
+
+- **Tenant isolation:** every workspace, project, and task lookup is scoped through the signed-in user's workspace membership, so an ID or slug alone never grants access. Records in other workspaces return the same 404 as records that don't exist, so their existence isn't revealed.
+- **Authentication built from scratch:** database-backed sessions with hashed tokens in HTTP-only cookies, bcrypt password hashing, email verification, password reset, and signing out every other device. No auth library is used.
+- **PostgreSQL and Prisma:** a relational schema with cascading deletes, unique constraints per workspace, and versioned migrations in `prisma/migrations`.
+- **Drag and drop:** a Kanban board built on dnd-kit that works with a mouse, touch, or the keyboard, with screen reader announcements and a status menu on every card as an alternative to dragging.
+- **Accessibility:** labelled form fields, errors linked to their fields and focused on submit, live regions for status messages, visible focus styles, skip link, and responsive layouts down to small phones.
+- **Automated tests and CI:** unit and source tests, integration tests against a real PostgreSQL database, linting, type checking, and a production build, all run by GitHub Actions on every push.
 
 ## Features
 
@@ -17,6 +26,34 @@ Taskora is still in development. It has not been deployed and is not production-
 - **Analytics:** per-project task totals, status counts, completion percentage, and a priority breakdown.
 - **Dashboard:** your workspaces with project counts, open tasks, and tasks assigned to you.
 
+## Screenshots
+
+All screenshots use synthetic demo data in a local sample workspace.
+
+### Kanban board
+
+Tasks across To do, In progress, and Done, with priorities, assignees, and due dates.
+
+![Kanban board with tasks in To do, In progress, and Done columns](docs/screenshots/kanban-board.png)
+
+### Project analytics
+
+Status counts, completion percentage, and the priority breakdown for one project.
+
+![Project analytics with status counts, completion, and priority breakdown](docs/screenshots/project-analytics.png)
+
+### Task details
+
+A task's description, status, assignee, priority, due date, and comments.
+
+![Task details with description, properties, and comments](docs/screenshots/task-details.png)
+
+### Workspace management
+
+A workspace overview with active projects and an archived projects section.
+
+![Workspace overview with active and archived projects](docs/screenshots/workspace-management.png)
+
 ## Technology
 
 - [Next.js 16](https://nextjs.org) App Router with React 19 Server Components
@@ -27,6 +64,7 @@ Taskora is still in development. It has not been deployed and is not production-
 - bcrypt for password hashing
 - [dnd-kit](https://dndkit.com) for drag and drop
 - [Resend](https://resend.com) REST API for email (no SDK)
+- Node's built-in test runner and GitHub Actions
 
 ## Architecture
 
@@ -35,18 +73,19 @@ Request handling and business logic are kept separate:
 `Route Handler -> Validation -> Service -> Database`
 
 - Pages are Server Components that load data through the services in `src/services`. Client Components handle forms and interactions and call the JSON API in `src/app/api`.
-- Every workspace, project, and task lookup goes through the user's workspace membership, so a record ID or slug alone is never enough to read or change it. Missing and inaccessible records both return 404.
+- Every workspace, project, and task lookup goes through the user's workspace membership. Missing and inaccessible records both return 404, and pages return a real 404 status rather than a 200 with a "not found" message.
 - Sessions use a random token in an HTTP-only cookie. Only a SHA-256 hash of the token is stored in the database.
 - Mutating API requests are checked for a trusted origin and the expected content type before the session is read.
+- Login, signup, password, and email actions are rate limited in PostgreSQL. Rate-limit keys are HMAC hashes, so the table never stores emails or IP addresses in a recoverable form.
 
-The product and technical specification is in [`docs/PROJECT_SPEC.md`](docs/PROJECT_SPEC.md).
+The original product and technical specification is in [`docs/PROJECT_SPEC.md`](docs/PROJECT_SPEC.md).
 
 ## Local setup
 
 ### Requirements
 
-- Node.js 20 or later, with npm
-- PostgreSQL (developed and tested against PostgreSQL 18)
+- Node.js 20.9 or later, with npm. CI uses Node 20.
+- PostgreSQL. Taskora is developed and tested against PostgreSQL 18.
 
 ### Install
 
@@ -54,42 +93,29 @@ The product and technical specification is in [`docs/PROJECT_SPEC.md`](docs/PROJ
 npm install
 ```
 
-### Configure PostgreSQL
+### Create the databases
 
-Create a database for development, for example `taskora`:
+Create one database for development and, if you want to run the integration tests, a separate one for tests. The test database name must end in `_test`.
 
 ```sql
 CREATE DATABASE taskora;
+CREATE DATABASE taskora_test;
 ```
 
-Copy `.env.example` to `.env` and set `DATABASE_URL` to that database. `.env` is ignored by git, so never commit it.
+### Configure environment variables
 
-### Apply migrations
-
-Migrations live in `prisma/migrations`. Apply them to your development database with:
-
-```bash
-npx prisma migrate dev
-```
-
-This also generates the Prisma Client into `src/generated/prisma`. To regenerate the client without touching the database, run `npx prisma generate`.
-
-When you change `prisma/schema.prisma`, create a new migration with `npx prisma migrate dev --name describe_the_change` and commit the generated folder.
-
-### Environment variables
-
-All variables are documented in `.env.example`. Never commit real values.
+Copy `.env.example` to `.env` and fill it in. `.env` is ignored by git, so never commit it.
 
 | Variable | Needed for | Purpose |
 | --- | --- | --- |
-| `DATABASE_URL` | Always | PostgreSQL connection used by the app. |
-| `DIRECT_URL` | Pooled databases only | Direct connection used by Prisma Migrate when `DATABASE_URL` goes through a pooler. Leave unset locally. |
-| `TEST_DATABASE_URL` | `npm run test:db` | Separate database for integration tests. Its name must end in `_test`. |
-| `APP_URL` | Email links, production | Public URL of the app with no path, such as `http://localhost:3000`. In production, login and signup only accept requests from this origin, and it must use `https`. |
-| `RATE_LIMIT_SECRET` | Email actions | At least 32 random characters used to hash rate-limit keys. Without it, rate-limited actions are refused. |
-| `RESEND_API_KEY` | Email | Resend API key. Server-side only. |
-| `EMAIL_FROM` | Email | Sender address. Use `Taskora <onboarding@resend.dev>` in development. |
-| `ENFORCE_EMAIL_VERIFICATION` | Optional | Set to `true` to require a verified email before using workspaces, projects, tasks, comments, and invitations. Off by default. |
+| `DATABASE_URL` | Always | PostgreSQL connection for the development database, such as `postgresql://USER:PASSWORD@localhost:5432/taskora`. |
+| `RATE_LIMIT_SECRET` | Always | At least 32 random characters used to hash rate-limit keys. Login, signup, and password changes are rate limited, so they are refused until this is set. |
+| `APP_URL` | Email links | Base URL with no path, `http://localhost:3000` locally. Used in email links. When it's set, form submissions from any other origin are rejected, so it must match the address you open. If `npm run dev` moves to another port because 3000 is busy, login will fail until they match. |
+| `TEST_DATABASE_URL` | `npm run test:db` | Connection for the separate test database. Its name must end in `_test`. |
+| `RESEND_API_KEY` | Email (optional) | Resend API key. Server-side only. |
+| `EMAIL_FROM` | Email (optional) | Sender address. `Taskora <onboarding@resend.dev>` works in development. |
+| `ENFORCE_EMAIL_VERIFICATION` | Optional | Set to `true` to require a verified email before using workspaces. Off by default. |
+| `DIRECT_URL` | Pooled databases only | Direct connection for Prisma Migrate when `DATABASE_URL` goes through a connection pooler. Leave unset locally. |
 
 Generate a `RATE_LIMIT_SECRET` with:
 
@@ -97,11 +123,22 @@ Generate a `RATE_LIMIT_SECRET` with:
 node -e "console.log(require('crypto').randomBytes(32).toString('base64url'))"
 ```
 
+### Apply migrations
+
+Apply the committed migrations to the development database and generate the Prisma Client into `src/generated/prisma`:
+
+```bash
+npx prisma migrate deploy
+npx prisma generate
+```
+
+If you change `prisma/schema.prisma`, create a new migration with `npx prisma migrate dev --name describe_the_change`. `migrate dev` uses a temporary shadow database, so your PostgreSQL user needs permission to create databases.
+
 ### Email in development
 
-Authentication emails are sent through Resend. With the testing sender `onboarding@resend.dev`, Resend only delivers to the email address of your own Resend account and rejects every other recipient. Taskora reports that as a failed send rather than pretending it worked. The testing sender is refused when `NODE_ENV` is `production`, so it only works under `npm run dev`.
+Email is optional locally. Without `RESEND_API_KEY`, nothing is sent and the failure is logged without the recipient, message, or link. Everything except email verification and password reset works, and email verification is not required unless `ENFORCE_EMAIL_VERIFICATION` is `true`.
 
-If email isn't configured, nothing is sent and the failure is logged without the recipient, message, or link. Everything except email verification and password reset still works.
+With Resend's testing sender `onboarding@resend.dev`, Resend only delivers to the email address of your own Resend account. Taskora reports any other recipient as a failed send. The testing sender is refused when `NODE_ENV` is `production`, so it only works under `npm run dev`.
 
 ## Running the app
 
@@ -126,10 +163,10 @@ Tests use Node's built-in test runner. `tests/support/register.mjs` lets them im
 
 ```bash
 npm test          # unit tests, validation, security helpers, and source checks; no database
-npm run test:db   # services against a separate PostgreSQL test database
+npm run test:db   # services against the separate PostgreSQL test database
 ```
 
-`npm run test:db` needs `TEST_DATABASE_URL`, pointing at a database whose name ends in `_test`, such as `postgresql://USER:PASSWORD@localhost:5432/taskora_test`. It refuses to run if that is the same database as `DATABASE_URL` or `DIRECT_URL`. Before the tests, it applies migrations with `prisma migrate deploy` and empties that database, so never point it at data you want to keep.
+`npm run test:db` reads `TEST_DATABASE_URL` from the environment or from `.env`. Before running anything, it checks that the database name ends in `_test` and that it isn't the same database as `DATABASE_URL` or `DIRECT_URL`, and refuses to run otherwise. It then applies migrations with `prisma migrate deploy` and empties the test database, so never point it at data you want to keep. Your development database is never touched.
 
 Other checks:
 
@@ -141,7 +178,7 @@ npx tsc --noEmit
 
 ## Continuous integration
 
-GitHub Actions (`.github/workflows/ci.yml`) runs on every push and pull request to `main`. Against a throwaway PostgreSQL 18 service, it runs:
+GitHub Actions (`.github/workflows/ci.yml`) runs on every push and pull request to `main`. Against a throwaway PostgreSQL 18 service container, it runs:
 
 1. `npm ci` and `npx prisma generate`
 2. `npm test`
@@ -152,33 +189,11 @@ GitHub Actions (`.github/workflows/ci.yml`) runs on every push and pull request 
 
 It uses placeholder values only and needs no secrets.
 
-## Before deploying
+## Deployment notes
 
-The plan is to host Taskora on Vercel with a managed PostgreSQL database that provides a connection pooler, such as Neon or Supabase. None of this is set up yet. Outstanding work includes:
+Taskora is not deployed and there are no plans to launch it. These notes are optional technical documentation for anyone who wants to host their own copy.
 
-- A verified sending domain in Resend. Until then, authentication emails can't reach real users.
-- Production values for every variable above. `APP_URL` must be the `https` URL of the deployment, and `EMAIL_FROM` must use the verified domain.
-- A separate database for preview deployments, never the production one.
-
-### Migrations in production
-
-Apply migrations to a production database with:
-
-```bash
-npx prisma migrate deploy
-```
-
-Never run `prisma migrate dev`, `prisma migrate reset`, or `prisma db push` against production.
-
-### Rate limiting
-
-Email-related actions have application-level limits stored in the `rate_limits` table, so they hold across serverless instances. Keys are HMAC-SHA-256 hashes made with `RATE_LIMIT_SECRET`, so the table never holds emails or IP addresses in a recoverable form. If the secret is missing or the table can't be reached, those actions are refused rather than allowed. Changing the secret resets every counter. Client IP addresses are only trusted on Vercel, which overwrites `X-Forwarded-For`; on other hosts the header can be forged, so only the limits keyed by email address or account apply. Expired rows are cleaned up opportunistically, so no scheduled job is needed.
-
-Login and signup are meant to be rate limited with a Vercel Firewall rule after the first deployment (Project, then Firewall, then Configure, then New Rule):
-
-- Name: `Auth rate limit`
-- If: Request Path is any of `/api/auth/login`, `/api/auth/signup`, and Method equals `POST`
-- Then: Rate Limit, Fixed Window, 60s window, 10 requests, keyed by IP Address
-- Action: start with Log to check real traffic, then switch to the default 429
-
-Hobby projects allow one rate limit rule, which is why both endpoints share it.
+- Every variable above needs a production value. `APP_URL` must be the `https` URL of the deployment, because login and signup only accept requests from that origin in production. `EMAIL_FROM` must use a domain verified in Resend.
+- Apply migrations with `npx prisma migrate deploy`. Never run `prisma migrate dev`, `prisma migrate reset`, or `prisma db push` against a database with real data.
+- With a connection pooler such as PgBouncer, set `DATABASE_URL` to the pooled connection and `DIRECT_URL` to the direct one.
+- Client IP addresses are only trusted on Vercel, which overwrites `X-Forwarded-For`. On other hosts the header can be forged, so only the rate limits keyed by email address or account apply. Expired rate-limit rows are cleaned up as requests come in, so no scheduled job is needed.
